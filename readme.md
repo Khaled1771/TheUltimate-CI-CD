@@ -37,8 +37,8 @@ Follow these steps to set up the CI/CD pipeline, with commands provided for key 
 Download the project files from this GitHub repository to your local machine.
 
 ```bash
-git clone https://github.com/your-username/your-repo.git
-cd your-repo
+git clone https://github.com/Khaled1771/TheUltimate-CI-CD.git
+cd TheUltimate-CI-CD/
 ```
 
 ### 2. Provision AWS Infrastructure
