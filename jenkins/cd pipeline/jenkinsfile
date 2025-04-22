@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+    
+    environment{
+        GIT_REPO = 'https://github.com/Khaled1771/TheUltimate-CI-CD.git'
+        BRANCH = 'main'
+        FOLDER_NAME = 'Kubernates'
+    }
+    
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git branch: "${BRANCH}", credentialsId: 'git-cred', url: "${GIT_REPO}"
+            }
+        }
+        
+        stage('Deploy To Kubernates') {
+            steps {
+                withKubeConfig(caCertificate: '', clusterName: 'kind-board-game', contextName: '', credentialsId: 'kube-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://127.0.0.1:45595') {
+                    sh "kubectl apply -f "
+                }
+            }
+        }
+        
+        stage('Verify Deployment') {
+            steps {
+                withKubeConfig(caCertificate: '', clusterName: 'kind-board-game', contextName: '', credentialsId: 'kube-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://127.0.0.1:45595') {
+                    sh "kubectl get pods -n namespace"
+                    sh "kubectl get svc -n namespace"
+                }
+            }
+        }
+    }
+    
+    post{
+        always {
+            scirpt{
+                def jobName = env.JOB_NAME
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: "UNKNOWN"
+                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+                
+                def body = """
+                    <html>
+                        <body>
+                            <div style="border: 4px solid ${bannerColor}; padding: 10px;">
+                                <h2> ${jobName} - Build ${buildNumber} </h2>
+                                <div style="background-color: ${bannerColor}; padding: 10px">
+                                    <h3 style="color: white;"> Pipeline Status: ${pipelineStatus.toUpperCase()} </h3>
+                                </div>
+                                <p> Check the <a href="${BUILD_URL}"> console output. </a></p>
+                            </div>
+                        </body>
+                    </html>
+                """
+                
+                
+                emailext(
+                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+                    body: body,
+                    to: 'osamamostafa065@gamil.com, abdelrahman.hamouda29@gmail.com',
+                    from: "jenkins-BoardGame-CD-pipline@gmail.com",
+                    replyTo: "jenkins-BoardGame-CD-pipline@gmail.com",
+                    mimeType: 'text/html',
+                )
+            }
+        }
+    }
+    
+}
