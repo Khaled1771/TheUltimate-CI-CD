@@ -1,0 +1,20 @@
+-jdk
+eclipse temurin installer plugin
+
+-sonar
+sonarQube scanner 
+
+-maven
+config file provider
+maven integration
+pipleine maven integration
+
+-docker
+docker pipline 
+docker 
+
+-kubernates
+Kubernates client api
+Kubernates credentials 
+Kubernates
+Kubernates cli
