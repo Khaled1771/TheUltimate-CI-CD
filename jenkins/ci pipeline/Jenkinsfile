@@ -119,6 +119,12 @@ pipeline {
             }
         }
 
+         stage("Ansible With Docker") {
+            steps{
+                sh "ansible-playbook -i Ansible/inventory Ansible/docker.yml --extra-vars 'docker_image=${IMAGE_NAME} docker_tag=${IMAGE_TAG}'"
+            }
+        }
+
     }
 
     post {
