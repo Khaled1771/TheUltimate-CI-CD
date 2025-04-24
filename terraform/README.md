@@ -30,6 +30,45 @@ The infrastructure consists of three main components:
 - IAM roles and security groups for cluster and nodes
 - Proper dependencies to ensure correct resource creation order
 
+## Installing Terraform
+
+Before proceeding, ensure you have Terraform installed:
+
+### Linux
+```bash
+# Download the latest Terraform package
+curl -fsSL https://releases.hashicorp.com/terraform/1.7.3/terraform_1.7.3_linux_amd64.zip -o terraform.zip
+
+# Unzip the package
+unzip terraform.zip
+
+# Move binary to a directory in your PATH
+sudo mv terraform /usr/local/bin/
+
+# Verify installation
+terraform version
+```
+
+### macOS
+```bash
+# Using Homebrew
+brew tap hashicorp/tap
+brew install hashicorp/tap/terraform
+
+# Verify installation
+terraform version
+```
+
+### Windows
+```powershell
+# Using Chocolatey
+choco install terraform
+
+# Alternatively, download from https://www.terraform.io/downloads.html and add to PATH
+# Verify installation
+terraform version
+```
+
 ## Prerequisites
 
 Before deploying this infrastructure, you need:
