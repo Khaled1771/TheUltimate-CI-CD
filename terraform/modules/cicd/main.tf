@@ -67,10 +67,10 @@ resource "aws_instance" "nexus" {
   # EOF
   # )
   
-  # tags = {
-  #   Name        = "${var.project_name}-nexus"
-  #   Environment = var.environment
-  # }
+  tags = {
+    Name        = "${var.project_name}-nexus"
+    Environment = var.environment
+  }
 }
 
 # SonarQube Instance
