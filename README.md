@@ -417,11 +417,3 @@ We welcome contributions to improve this CI/CD blueprint:
 5. Submit a pull request
 
 Please ensure your code follows our style guidelines and passes all automated tests.
-
-
----
-
-<div align="center">
-  <p>Built with ❤️</p>
-  <p>© 2025 Your Organization. All rights reserved.</p>
-</div>
