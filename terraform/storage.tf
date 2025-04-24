@@ -129,14 +129,3 @@ resource "aws_s3_bucket_policy" "cache" {
     ]
   })
 }
-
-# Output the bucket names for reference in other modules
-output "artifacts_bucket_name" {
-  description = "Name of the artifacts S3 bucket"
-  value       = aws_s3_bucket.artifacts.id
-}
-
-output "cache_bucket_name" {
-  description = "Name of the cache S3 bucket"
-  value       = aws_s3_bucket.cache.id
-}

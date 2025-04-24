@@ -4,72 +4,97 @@
 - name: Configure Jenkins server
   hosts: jenkins
   become: yes
-  vars:
-    jenkins_repo_url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
   tasks:
     - name: Install dependencies
-      apt:
+      yum:
         name:
-          - openjdk-17-jre-headless
-          - apt-transport-https
+          - java-17-amazon-corretto
           - ca-certificates
           - curl
         state: present
         update_cache: yes
 
-    - name: Add Jenkins APT key
-      apt_key:
-        url: "{{ jenkins_repo_url }}"
-        state: present
-
     - name: Add Jenkins repo
-      apt_repository:
-        repo: "deb https://pkg.jenkins.io/debian-stable binary/"
+      get_url:
+        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+        dest: /etc/yum.repos.d/jenkins.repo
+        mode: '0644'
+
+    - name: Import Jenkins GPG key
+      rpm_key:
+        key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
         state: present
 
-    - name: Install Jenkins
-      apt:
+    - name: Import Jenkins GPG key - alternative method
+      shell: >
+        rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+
+    - name: Install Jenkins with GPG check disabled
+      yum:
         name: jenkins
         state: present
-        update_cache: yes
+        disable_gpg_check: yes
 
-    - name: Install Docker dependencies
-      apt:
+    - name: Install Docker
+      yum:
         name:
-          - docker.io
+          - docker
           - python3-pip
         state: present
 
-    - name: Install Trivy via pip
-      pip:
-        name: trivy
+    - name: Install Trivy
+      shell: |
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      args:
+        creates: /usr/local/bin/trivy
 
     - name: Install kubectl
-      get_url:
-        url: https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-        dest: /usr/local/bin/kubectl
-        mode: '0755'
+      shell: |
+        curl -LO "https://dl.k8s.io/release/stable.txt"
+        KUBECTL_VERSION=$(cat stable.txt)
+        curl -LO "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        mv kubectl /usr/local/bin/
+        rm stable.txt
+      args:
+        creates: /usr/local/bin/kubectl
 
-    - name: Start and enable services
+    - name: Start and enable Docker
       service:
-        name: "{{ item }}"
+        name: docker
         state: started
         enabled: yes
-      loop:
-        - docker
-        - jenkins
+
+    - name: Start and enable Jenkins
+      service:
+        name: jenkins
+        state: started
+        enabled: yes
 
 - name: Configure SonarQube server
   hosts: sonarqube
   become: yes
   tasks:
     - name: Install Docker
-      apt:
-        name: docker.io
+      yum:
+        name: docker
         state: present
         update_cache: yes
 
-    - name: Ensure Docker is running
+    - name: Install Python dependencies for Docker module
+      yum:
+        name:
+          - python3-pip
+        state: present
+
+    - name: Install Python Docker library
+      pip:
+        name:
+          - urllib3==1.26.16
+          - docker
+          - requests<=2.29.0
+
+    - name: Start and enable Docker
       service:
         name: docker
         state: started
@@ -89,12 +114,25 @@
   become: yes
   tasks:
     - name: Install Docker
-      apt:
-        name: docker.io
+      yum:
+        name: docker
         state: present
         update_cache: yes
 
-    - name: Ensure Docker is running
+    - name: Install Python dependencies for Docker module
+      yum:
+        name:
+          - python3-pip
+        state: present
+
+    - name: Install Python Docker library
+      pip:
+        name:
+          - urllib3==1.26.16
+          - docker
+          - requests<=2.29.0
+
+    - name: Start and enable Docker
       service:
         name: docker
         state: started

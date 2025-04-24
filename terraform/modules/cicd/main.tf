@@ -2,10 +2,11 @@
 resource "aws_instance" "jenkins" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
-  subnet_id              = var.private_subnet_ids[0]
+  subnet_id              = var.public_subnet_ids[0]  # Changed from private to public subnet
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.jenkins.id]
   iam_instance_profile   = var.jenkins_instance_profile_name
+  associate_public_ip_address = true  # Ensure public IP address is assigned
   
   # user_data = base64encode(<<-EOF
   #   #!/bin/bash
@@ -30,10 +31,11 @@ resource "aws_instance" "jenkins" {
 resource "aws_instance" "nexus" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
-  subnet_id              = var.private_subnet_ids[0]
+  subnet_id              = var.public_subnet_ids[0]  # Changed from private to public subnet
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.nexus.id]
   iam_instance_profile   = var.nexus_instance_profile_name
+  associate_public_ip_address = true  # Ensure public IP address is assigned
   
   # user_data = base64encode(<<-EOF
   #   #!/bin/bash
@@ -77,10 +79,11 @@ resource "aws_instance" "nexus" {
 resource "aws_instance" "sonarqube" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
-  subnet_id              = var.private_subnet_ids[0]
+  subnet_id              = var.public_subnet_ids[0]  # Changed from private to public subnet
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.sonarqube.id]
   iam_instance_profile   = var.sonarqube_instance_profile_name
+  associate_public_ip_address = true  # Ensure public IP address is assigned
   
   # user_data = base64encode(<<-EOF
   #   #!/bin/bash

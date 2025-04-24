@@ -54,7 +54,22 @@ fi
 
 # Check if the EC2 key pair already exists
 if aws ec2 describe-key-pairs --key-names ${KEY_NAME} 2>/dev/null; then
-  echo "Key pair ${KEY_NAME} already exists. Skipping key creation."
+  if [ -f "${KEY_FILE}" ]; then
+    echo "Key pair ${KEY_NAME} already exists and local key file is present. Skipping key creation."
+  else
+    echo "Key pair ${KEY_NAME} exists in AWS but local file is missing. Deleting and recreating key pair."
+    aws ec2 delete-key-pair --key-name ${KEY_NAME}
+    
+    echo "Creating new key pair: ${KEY_NAME}"
+    aws ec2 create-key-pair \
+      --key-name ${KEY_NAME} \
+      --query 'KeyMaterial' \
+      --output text > ${KEY_FILE}
+    
+    # Set proper permissions for the key file
+    chmod 400 ${KEY_FILE}
+    echo "EC2 key pair created and saved to ${KEY_FILE}"
+  fi
 else
   echo "Creating new key pair: ${KEY_NAME}"
   aws ec2 create-key-pair \
