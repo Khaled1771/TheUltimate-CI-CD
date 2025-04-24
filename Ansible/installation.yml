@@ -1,0 +1,110 @@
+#######     Installation play-book     #######  
+---
+
+- name: Configure Jenkins server
+  hosts: jenkins
+  become: yes
+  vars:
+    jenkins_repo_url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
+  tasks:
+    - name: Install dependencies
+      apt:
+        name:
+          - openjdk-17-jre-headless
+          - apt-transport-https
+          - ca-certificates
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Add Jenkins APT key
+      apt_key:
+        url: "{{ jenkins_repo_url }}"
+        state: present
+
+    - name: Add Jenkins repo
+      apt_repository:
+        repo: "deb https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+
+    - name: Install Docker dependencies
+      apt:
+        name:
+          - docker.io
+          - python3-pip
+        state: present
+
+    - name: Install Trivy via pip
+      pip:
+        name: trivy
+
+    - name: Install kubectl
+      get_url:
+        url: https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+
+    - name: Start and enable services
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - docker
+        - jenkins
+
+- name: Configure SonarQube server
+  hosts: sonarqube
+  become: yes
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Run SonarQube container
+      docker_container:
+        name: sonarqube
+        image: sonarqube:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "9000:9000"
+
+- name: Configure Nexus repository server
+  hosts: nexus
+  become: yes
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Run Nexus container
+      docker_container:
+        name: nexus
+        image: sonatype/nexus3:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "8081:8081"
