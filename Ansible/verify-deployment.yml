@@ -1,0 +1,15 @@
+#######     Kubernetes Verify play-book     ####### 
+---
+
+- name: Kubernetes Operations
+  hosts: <target-host>
+  remote_user: <used-user-on-vm>
+  become: true
+  tasks:
+
+  - name: Verify Kubernetes Deployment
+    shell: kubectl get deployment
+
+  - name: Verify Kubernetes LoadBalancer
+    shell: kubectl get svc
+

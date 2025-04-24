@@ -12,3 +12,4 @@
 
   - name: Apply Kubernetes Manifest to create the LoadBalancer
     shell: kubectl apply -f ../Kubernetes/ingress.yml
+
