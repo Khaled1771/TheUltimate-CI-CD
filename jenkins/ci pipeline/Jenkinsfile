@@ -9,7 +9,6 @@ pipeline {
     environment{
         GIT_REPO = 'https://github.com/Khaled1771/TheUltimate-CI-CD.git'
         BRANCH = 'dev'
-        FOLDER_NAME = 'BoardGame'
         
         IMAGE_NAME = 'osamaseyam/boardgame-app'
         IMAGE_TAG = 'latest'
@@ -26,9 +25,8 @@ pipeline {
         stage('Compile') {
             steps {
                 script {
-                    dir("BoardGame"){
-                        sh 'mvn compile'
-                    }
+                    sh "cd BoardGame"
+                    sh 'mvn compile'
                 }
             }
         }
@@ -36,10 +34,9 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    dir("${FOLDER_NAME}"){
-                        sh 'mvn test'
-                    }
-                }
+                    sh "cd BoardGame"   
+                    sh 'mvn test'
+                }     
             }
         }
         
@@ -71,9 +68,8 @@ pipeline {
         stage('Build'){
             steps{
                 script {
-                    dir("${FOLDER_NAME}"){
-                        sh 'mvn package'
-                    }
+                    sh "cd BoardGame"
+                    sh 'mvn package'
                 }
             }
         }
@@ -81,10 +77,9 @@ pipeline {
         stage('Publish To nexus'){
             steps{
                 script {
-                    dir("${FOLDER_NAME}"){
-                        withMaven(globalMavenSettingsConfig: 'global-settings', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
-                            sh 'mvn deploy'
-                        }
+                    sh "cd BoardGame"
+                    withMaven(globalMavenSettingsConfig: 'global-settings', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
+                        sh 'mvn deploy'
                     }
                 } 
             }
@@ -93,10 +88,9 @@ pipeline {
         stage('Build & Tag Docker Image'){
             steps{
                 script { 
-                    dir("${FOLDER_NAME}"){
-                        withDockerRegistry(credentialsId: "docker-cred", toolName:'docker'){
-                            sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."                        
-                        }
+                    sh "cd BoardGame"
+                    withDockerRegistry(credentialsId: "docker-cred", toolName:'docker'){
+                        sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."                        
                     }
                 }
             }
