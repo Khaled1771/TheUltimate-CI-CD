@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: depi-board-game-ingress
+  labels:
+    app: depi-board-game
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - board-game.depi.com
+    secretName: board-game-tls-secret
+  rules:
+    - host: board-game.depi.com
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: depi-board-game-service
+              port:
+                number: 8080
