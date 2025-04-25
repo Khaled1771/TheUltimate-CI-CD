@@ -4,7 +4,7 @@ replicaCount: 3
 image:
   repository: osamaseyam/board-game
   tag: latest
-  pullPolicy: Never
+  pullPolicy: Always
 
 service:
   type: ClusterIP
