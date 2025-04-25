@@ -1,0 +1,141 @@
+digraph G {
+  rankdir = "RL";
+  node [shape = rect, fontname = "sans-serif"];
+  "data.aws_ami.amazon_linux_2" [label="data.aws_ami.amazon_linux_2"];
+  "aws_iam_instance_profile.jenkins" [label="aws_iam_instance_profile.jenkins"];
+  "aws_iam_instance_profile.nexus" [label="aws_iam_instance_profile.nexus"];
+  "aws_iam_instance_profile.sonarqube" [label="aws_iam_instance_profile.sonarqube"];
+  "aws_iam_role.eks_cluster" [label="aws_iam_role.eks_cluster"];
+  "aws_iam_role.eks_node_group" [label="aws_iam_role.eks_node_group"];
+  "aws_iam_role.jenkins" [label="aws_iam_role.jenkins"];
+  "aws_iam_role.nexus" [label="aws_iam_role.nexus"];
+  "aws_iam_role.sonarqube" [label="aws_iam_role.sonarqube"];
+  "aws_iam_role_policy_attachment.eks_cluster_policy" [label="aws_iam_role_policy_attachment.eks_cluster_policy"];
+  "aws_iam_role_policy_attachment.jenkins_ecr_policy" [label="aws_iam_role_policy_attachment.jenkins_ecr_policy"];
+  "aws_iam_role_policy_attachment.jenkins_eks" [label="aws_iam_role_policy_attachment.jenkins_eks"];
+  "aws_iam_role_policy_attachment.jenkins_s3_policy" [label="aws_iam_role_policy_attachment.jenkins_s3_policy"];
+  "aws_iam_role_policy_attachment.nexus_s3_policy" [label="aws_iam_role_policy_attachment.nexus_s3_policy"];
+  "aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly" [label="aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly"];
+  "aws_iam_role_policy_attachment.node_AmazonEKSWorkerNodePolicy" [label="aws_iam_role_policy_attachment.node_AmazonEKSWorkerNodePolicy"];
+  "aws_iam_role_policy_attachment.node_AmazonEKS_CNI_Policy" [label="aws_iam_role_policy_attachment.node_AmazonEKS_CNI_Policy"];
+  "aws_iam_role_policy_attachment.node_AmazonSSMManagedInstanceCore" [label="aws_iam_role_policy_attachment.node_AmazonSSMManagedInstanceCore"];
+  "aws_iam_role_policy_attachment.sonarqube_s3_policy" [label="aws_iam_role_policy_attachment.sonarqube_s3_policy"];
+  "aws_s3_bucket.artifacts" [label="aws_s3_bucket.artifacts"];
+  "aws_s3_bucket.cache" [label="aws_s3_bucket.cache"];
+  "aws_s3_bucket_policy.artifacts" [label="aws_s3_bucket_policy.artifacts"];
+  "aws_s3_bucket_policy.cache" [label="aws_s3_bucket_policy.cache"];
+  "aws_s3_bucket_public_access_block.artifacts" [label="aws_s3_bucket_public_access_block.artifacts"];
+  "aws_s3_bucket_public_access_block.cache" [label="aws_s3_bucket_public_access_block.cache"];
+  "aws_s3_bucket_server_side_encryption_configuration.artifacts" [label="aws_s3_bucket_server_side_encryption_configuration.artifacts"];
+  "aws_s3_bucket_server_side_encryption_configuration.cache" [label="aws_s3_bucket_server_side_encryption_configuration.cache"];
+  "aws_s3_bucket_versioning.artifacts" [label="aws_s3_bucket_versioning.artifacts"];
+  "aws_s3_bucket_versioning.cache" [label="aws_s3_bucket_versioning.cache"];
+  subgraph "cluster_module.cicd_infrastructure" {
+    label = "module.cicd_infrastructure"
+    fontname = "sans-serif"
+    "module.cicd_infrastructure.aws_instance.jenkins" [label="aws_instance.jenkins"];
+    "module.cicd_infrastructure.aws_instance.nexus" [label="aws_instance.nexus"];
+    "module.cicd_infrastructure.aws_instance.sonarqube" [label="aws_instance.sonarqube"];
+    "module.cicd_infrastructure.aws_security_group.jenkins" [label="aws_security_group.jenkins"];
+    "module.cicd_infrastructure.aws_security_group.nexus" [label="aws_security_group.nexus"];
+    "module.cicd_infrastructure.aws_security_group.sonarqube" [label="aws_security_group.sonarqube"];
+  }
+  subgraph "cluster_module.eks" {
+    label = "module.eks"
+    fontname = "sans-serif"
+    "module.eks.data.aws_caller_identity.current" [label="data.aws_caller_identity.current"];
+    "module.eks.data.aws_partition.current" [label="data.aws_partition.current"];
+    "module.eks.aws_eks_cluster.main" [label="aws_eks_cluster.main"];
+    "module.eks.aws_eks_node_group.main" [label="aws_eks_node_group.main"];
+    "module.eks.aws_security_group.eks_cluster" [label="aws_security_group.eks_cluster"];
+    "module.eks.aws_security_group.eks_nodes" [label="aws_security_group.eks_nodes"];
+    "module.eks.aws_security_group_rule.nodes_to_cluster_all_traffic" [label="aws_security_group_rule.nodes_to_cluster_all_traffic"];
+  }
+  subgraph "cluster_module.vpc" {
+    label = "module.vpc"
+    fontname = "sans-serif"
+    "module.vpc.aws_eip.nat" [label="aws_eip.nat"];
+    "module.vpc.aws_internet_gateway.main" [label="aws_internet_gateway.main"];
+    "module.vpc.aws_nat_gateway.main" [label="aws_nat_gateway.main"];
+    "module.vpc.aws_route_table.private" [label="aws_route_table.private"];
+    "module.vpc.aws_route_table.public" [label="aws_route_table.public"];
+    "module.vpc.aws_route_table_association.private" [label="aws_route_table_association.private"];
+    "module.vpc.aws_route_table_association.public" [label="aws_route_table_association.public"];
+    "module.vpc.aws_subnet.private" [label="aws_subnet.private"];
+    "module.vpc.aws_subnet.public" [label="aws_subnet.public"];
+    "module.vpc.aws_vpc.main" [label="aws_vpc.main"];
+  }
+  "aws_iam_instance_profile.jenkins" -> "aws_iam_role.jenkins";
+  "aws_iam_instance_profile.nexus" -> "aws_iam_role.nexus";
+  "aws_iam_instance_profile.sonarqube" -> "aws_iam_role.sonarqube";
+  "aws_iam_role_policy_attachment.eks_cluster_policy" -> "aws_iam_role.eks_cluster";
+  "aws_iam_role_policy_attachment.jenkins_ecr_policy" -> "aws_iam_role.jenkins";
+  "aws_iam_role_policy_attachment.jenkins_eks" -> "aws_iam_role.jenkins";
+  "aws_iam_role_policy_attachment.jenkins_s3_policy" -> "aws_iam_role.jenkins";
+  "aws_iam_role_policy_attachment.nexus_s3_policy" -> "aws_iam_role.nexus";
+  "aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly" -> "aws_iam_role.eks_node_group";
+  "aws_iam_role_policy_attachment.node_AmazonEKSWorkerNodePolicy" -> "aws_iam_role.eks_node_group";
+  "aws_iam_role_policy_attachment.node_AmazonEKS_CNI_Policy" -> "aws_iam_role.eks_node_group";
+  "aws_iam_role_policy_attachment.node_AmazonSSMManagedInstanceCore" -> "aws_iam_role.eks_node_group";
+  "aws_iam_role_policy_attachment.sonarqube_s3_policy" -> "aws_iam_role.sonarqube";
+  "aws_s3_bucket_policy.artifacts" -> "aws_iam_role.jenkins";
+  "aws_s3_bucket_policy.artifacts" -> "aws_iam_role.nexus";
+  "aws_s3_bucket_policy.artifacts" -> "aws_iam_role.sonarqube";
+  "aws_s3_bucket_policy.artifacts" -> "aws_s3_bucket.artifacts";
+  "aws_s3_bucket_policy.cache" -> "aws_iam_role.jenkins";
+  "aws_s3_bucket_policy.cache" -> "aws_iam_role.nexus";
+  "aws_s3_bucket_policy.cache" -> "aws_iam_role.sonarqube";
+  "aws_s3_bucket_policy.cache" -> "aws_s3_bucket.cache";
+  "aws_s3_bucket_public_access_block.artifacts" -> "aws_s3_bucket.artifacts";
+  "aws_s3_bucket_public_access_block.cache" -> "aws_s3_bucket.cache";
+  "aws_s3_bucket_server_side_encryption_configuration.artifacts" -> "aws_s3_bucket.artifacts";
+  "aws_s3_bucket_server_side_encryption_configuration.cache" -> "aws_s3_bucket.cache";
+  "aws_s3_bucket_versioning.artifacts" -> "aws_s3_bucket.artifacts";
+  "aws_s3_bucket_versioning.cache" -> "aws_s3_bucket.cache";
+  "module.cicd_infrastructure.aws_instance.jenkins" -> "data.aws_ami.amazon_linux_2";
+  "module.cicd_infrastructure.aws_instance.jenkins" -> "aws_iam_instance_profile.jenkins";
+  "module.cicd_infrastructure.aws_instance.jenkins" -> "module.cicd_infrastructure.aws_security_group.jenkins";
+  "module.cicd_infrastructure.aws_instance.nexus" -> "data.aws_ami.amazon_linux_2";
+  "module.cicd_infrastructure.aws_instance.nexus" -> "aws_iam_instance_profile.nexus";
+  "module.cicd_infrastructure.aws_instance.nexus" -> "module.cicd_infrastructure.aws_security_group.nexus";
+  "module.cicd_infrastructure.aws_instance.sonarqube" -> "data.aws_ami.amazon_linux_2";
+  "module.cicd_infrastructure.aws_instance.sonarqube" -> "aws_iam_instance_profile.sonarqube";
+  "module.cicd_infrastructure.aws_instance.sonarqube" -> "module.cicd_infrastructure.aws_security_group.sonarqube";
+  "module.cicd_infrastructure.aws_security_group.jenkins" -> "aws_s3_bucket.artifacts";
+  "module.cicd_infrastructure.aws_security_group.jenkins" -> "module.vpc.aws_route_table_association.private";
+  "module.cicd_infrastructure.aws_security_group.jenkins" -> "module.vpc.aws_route_table_association.public";
+  "module.cicd_infrastructure.aws_security_group.nexus" -> "aws_s3_bucket.artifacts";
+  "module.cicd_infrastructure.aws_security_group.nexus" -> "module.vpc.aws_route_table_association.private";
+  "module.cicd_infrastructure.aws_security_group.nexus" -> "module.vpc.aws_route_table_association.public";
+  "module.cicd_infrastructure.aws_security_group.sonarqube" -> "aws_s3_bucket.artifacts";
+  "module.cicd_infrastructure.aws_security_group.sonarqube" -> "module.vpc.aws_route_table_association.private";
+  "module.cicd_infrastructure.aws_security_group.sonarqube" -> "module.vpc.aws_route_table_association.public";
+  "module.eks.data.aws_caller_identity.current" -> "aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly";
+  "module.eks.data.aws_caller_identity.current" -> "aws_iam_role_policy_attachment.node_AmazonEKSWorkerNodePolicy";
+  "module.eks.data.aws_caller_identity.current" -> "aws_iam_role_policy_attachment.node_AmazonEKS_CNI_Policy";
+  "module.eks.data.aws_partition.current" -> "aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly";
+  "module.eks.data.aws_partition.current" -> "aws_iam_role_policy_attachment.node_AmazonEKSWorkerNodePolicy";
+  "module.eks.data.aws_partition.current" -> "aws_iam_role_policy_attachment.node_AmazonEKS_CNI_Policy";
+  "module.eks.aws_eks_cluster.main" -> "aws_iam_role.eks_cluster";
+  "module.eks.aws_eks_cluster.main" -> "module.eks.aws_security_group.eks_cluster";
+  "module.eks.aws_eks_cluster.main" -> "module.vpc.aws_subnet.private";
+  "module.eks.aws_eks_node_group.main" -> "module.eks.aws_eks_cluster.main";
+  "module.eks.aws_security_group.eks_cluster" -> "aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly";
+  "module.eks.aws_security_group.eks_cluster" -> "aws_iam_role_policy_attachment.node_AmazonEKSWorkerNodePolicy";
+  "module.eks.aws_security_group.eks_cluster" -> "aws_iam_role_policy_attachment.node_AmazonEKS_CNI_Policy";
+  "module.eks.aws_security_group.eks_cluster" -> "module.vpc.aws_vpc.main";
+  "module.eks.aws_security_group.eks_nodes" -> "module.eks.aws_security_group.eks_cluster";
+  "module.eks.aws_security_group_rule.nodes_to_cluster_all_traffic" -> "module.eks.aws_security_group.eks_nodes";
+  "module.vpc.aws_internet_gateway.main" -> "module.vpc.aws_vpc.main";
+  "module.vpc.aws_nat_gateway.main" -> "module.vpc.aws_eip.nat";
+  "module.vpc.aws_nat_gateway.main" -> "module.vpc.aws_internet_gateway.main";
+  "module.vpc.aws_nat_gateway.main" -> "module.vpc.aws_subnet.public";
+  "module.vpc.aws_route_table.private" -> "module.vpc.aws_nat_gateway.main";
+  "module.vpc.aws_route_table.public" -> "module.vpc.aws_internet_gateway.main";
+  "module.vpc.aws_route_table_association.private" -> "module.vpc.aws_route_table.private";
+  "module.vpc.aws_route_table_association.private" -> "module.vpc.aws_subnet.private";
+  "module.vpc.aws_route_table_association.public" -> "module.vpc.aws_route_table.public";
+  "module.vpc.aws_route_table_association.public" -> "module.vpc.aws_subnet.public";
+  "module.vpc.aws_subnet.private" -> "module.vpc.aws_vpc.main";
+  "module.vpc.aws_subnet.public" -> "module.vpc.aws_vpc.main";
+}
