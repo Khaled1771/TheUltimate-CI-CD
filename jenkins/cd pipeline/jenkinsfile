@@ -16,18 +16,13 @@ pipeline {
         
         stage('Deploy To Kubernates') {
             steps {
-                withKubeConfig(caCertificate: '', clusterName: 'kind-board-game', contextName: '', credentialsId: 'kube-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://127.0.0.1:45595') {
-                    sh "kubectl apply -f "
-                }
+                 sh "ansible-playbook -i Ansible/inventory Ansible/deployment.yml"
             }
         }
         
         stage('Verify Deployment') {
             steps {
-                withKubeConfig(caCertificate: '', clusterName: 'kind-board-game', contextName: '', credentialsId: 'kube-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://127.0.0.1:45595') {
-                    sh "kubectl get pods -n namespace"
-                    sh "kubectl get svc -n namespace"
-                }
+                sh "ansible-playbook -i Ansible/inventory Ansible/verify-deployment.yml"
             }
         }
     }

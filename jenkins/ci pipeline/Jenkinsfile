@@ -119,6 +119,11 @@ pipeline {
             }
         }
 
+         stage("Ansible With Docker") {
+            steps{
+                sh "ansible-playbook -i Ansible/inventory Ansible/docker.yml --extra-vars 'docker_image=${IMAGE_NAME} docker_tag=${IMAGE_TAG}'"
+            }
+        }
     }
 
     post {
@@ -131,6 +136,8 @@ pipeline {
         }
 
         always {
+             sh 'docker logout'
+
             scirpt{
                 def jobName = env.JOB_NAME
                 def buildNumber = env.BUILD_NUMBER

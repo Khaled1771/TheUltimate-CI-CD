@@ -1,0 +1,148 @@
+#######     Installation play-book     #######  
+---
+
+- name: Configure Jenkins server
+  hosts: jenkins
+  become: yes
+  tasks:
+    - name: Install dependencies
+      yum:
+        name:
+          - java-17-amazon-corretto
+          - ca-certificates
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Add Jenkins repo
+      get_url:
+        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+        dest: /etc/yum.repos.d/jenkins.repo
+        mode: '0644'
+
+    - name: Import Jenkins GPG key
+      rpm_key:
+        key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+        state: present
+
+    - name: Import Jenkins GPG key - alternative method
+      shell: >
+        rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+
+    - name: Install Jenkins with GPG check disabled
+      yum:
+        name: jenkins
+        state: present
+        disable_gpg_check: yes
+
+    - name: Install Docker
+      yum:
+        name:
+          - docker
+          - python3-pip
+        state: present
+
+    - name: Install Trivy
+      shell: |
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      args:
+        creates: /usr/local/bin/trivy
+
+    - name: Install kubectl
+      shell: |
+        curl -LO "https://dl.k8s.io/release/stable.txt"
+        KUBECTL_VERSION=$(cat stable.txt)
+        curl -LO "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        mv kubectl /usr/local/bin/
+        rm stable.txt
+      args:
+        creates: /usr/local/bin/kubectl
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Start and enable Jenkins
+      service:
+        name: jenkins
+        state: started
+        enabled: yes
+
+- name: Configure SonarQube server
+  hosts: sonarqube
+  become: yes
+  tasks:
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+        update_cache: yes
+
+    - name: Install Python dependencies for Docker module
+      yum:
+        name:
+          - python3-pip
+        state: present
+
+    - name: Install Python Docker library
+      pip:
+        name:
+          - urllib3==1.26.16
+          - docker
+          - requests<=2.29.0
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Run SonarQube container
+      docker_container:
+        name: sonarqube
+        image: sonarqube:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "9000:9000"
+
+- name: Configure Nexus repository server
+  hosts: nexus
+  become: yes
+  tasks:
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+        update_cache: yes
+
+    - name: Install Python dependencies for Docker module
+      yum:
+        name:
+          - python3-pip
+        state: present
+
+    - name: Install Python Docker library
+      pip:
+        name:
+          - urllib3==1.26.16
+          - docker
+          - requests<=2.29.0
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Run Nexus container
+      docker_container:
+        name: nexus
+        image: sonatype/nexus3:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "8081:8081"
