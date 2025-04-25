@@ -1,6 +1,4 @@
 #######     Installation play-book     #######  
----
-
 - name: Configure Jenkins server
   hosts: jenkins
   become: yes
@@ -146,3 +144,134 @@
         restart_policy: always
         ports:
           - "8081:8081"
+
+- name: Configure Monitoring server (Prometheus and Grafana)
+  hosts: monitoring
+  become: yes
+  tasks:
+    - name: Install Docker and dependencies
+      yum:
+        name:
+          - docker
+          - python3-pip
+          - ca-certificates
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Install Python dependencies for Docker module
+      pip:
+        name:
+          - urllib3==1.26.16
+          - docker
+          - requests<=2.29.0
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install Docker Compose
+      shell: |
+        curl -L "https://github.com/docker/compose/releases/download/v2.23.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+      args:
+        creates: /usr/local/bin/docker-compose
+
+    - name: Create directories for monitoring stack
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/monitoring
+        - /opt/monitoring/prometheus
+
+    - name: Create prometheus.yml configuration
+      copy:
+        dest: /opt/monitoring/prometheus/prometheus.yml
+        content: |
+          global:
+            scrape_interval: 15s
+          
+          scrape_configs:
+            - job_name: 'prometheus'
+              static_configs:
+                - targets: ['localhost:9090']
+            
+            - job_name: 'node_exporter'
+              static_configs:
+                - targets: ['localhost:9100']
+            
+            - job_name: 'jenkins'
+              metrics_path: /prometheus
+              static_configs:
+                - targets: ["{{ hostvars[groups['jenkins'][0]].ansible_host }}:8080"]
+              
+            - job_name: 'kubernetes'
+              kubernetes_sd_configs:
+                - role: node
+        mode: '0644'
+
+    - name: Create docker-compose.yml
+      copy:
+        dest: /opt/monitoring/docker-compose.yml
+        content: |
+          version: '3'
+          
+          services:
+            prometheus:
+              image: prom/prometheus:latest
+              volumes:
+                - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+                - prometheus_data:/prometheus
+              command:
+                - '--config.file=/etc/prometheus/prometheus.yml'
+              ports:
+                - 9090:9090
+              restart: always
+          
+            node-exporter:
+              image: prom/node-exporter:latest
+              ports:
+                - 9100:9100
+              restart: always
+          
+            grafana:
+              image: grafana/grafana:latest
+              volumes:
+                - grafana_data:/var/lib/grafana
+              ports:
+                - 3000:3000
+              restart: always
+              environment:
+                - GF_SECURITY_ADMIN_PASSWORD=admin
+                - GF_USERS_ALLOW_SIGN_UP=false
+          
+            alertmanager:
+              image: prom/alertmanager:latest
+              ports:
+                - 9093:9093
+              restart: always
+              volumes:
+                - alertmanager_data:/alertmanager
+          
+          volumes:
+            prometheus_data:
+            grafana_data:
+            alertmanager_data:
+        mode: '0644'
+
+    - name: Start the monitoring stack
+      shell: |
+        cd /opt/monitoring
+        /usr/local/bin/docker-compose up -d
+      args:
+        creates: /opt/monitoring/setup_complete
+        
+    - name: Mark setup as complete
+      file:
+        path: /opt/monitoring/setup_complete
+        state: touch
+        mode: '0644'

@@ -7,5 +7,8 @@ sonarqube-server ansible_host=54.157.223.9 ansible_user=ec2-user
 [nexus]
 nexus-server ansible_host=3.89.130.144 ansible_user=ec2-user
 
+[monitoring]
+monitoring-server ansible_host=<MONITORING_SERVER_IP> ansible_user=ec2-user
+
 [all:vars]
 ansible_ssh_private_key_file=./enterprise-cicd-key.pem
