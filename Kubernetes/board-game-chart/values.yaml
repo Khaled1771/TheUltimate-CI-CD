@@ -2,7 +2,7 @@
 replicaCount: 3
 
 image:
-  repository: board-game
+  repository: osamaseyam/board-game
   tag: latest
   pullPolicy: Never
 

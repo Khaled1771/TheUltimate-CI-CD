@@ -10,7 +10,7 @@ pipeline {
         GIT_REPO = 'https://github.com/Khaled1771/TheUltimate-CI-CD.git'
         BRANCH = 'dev'
         
-        IMAGE_NAME = 'osamaseyam/boardgame-app'
+        IMAGE_NAME = 'osamaseyam/board-game'
         IMAGE_TAG = 'latest'
         SCANNER_HOME = tool 'sonar-scanner'
     }
@@ -98,7 +98,7 @@ pipeline {
         
         stage('Docker Image Scan') {
             steps {
-                sh 'trivy image --format table -o trivy-image-report.html osamaseyam/boardgame:lts'
+                sh 'trivy image --format table -o trivy-image-report.html ${IMAGE_NAME}:${IMAGE_TAG}'
             }
         }
         
