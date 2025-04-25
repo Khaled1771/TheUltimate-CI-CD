@@ -5,4 +5,27 @@ metadata:
   labels:
     app: depi-board-game
 spec:
-  
+  replicas: 3
+  selector:
+    matchLabels:
+      app: depi-board-game
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1  # Number of extra pods to create during update
+      maxUnavailable: 1  # Number of pods that can be unavailable during update
+  minReadySeconds: 10  # Minimum number of seconds for a pod to be ready before considered available
+  progressDeadlineSeconds: 600  # Time to wait for deployment to be completed
+  template:
+    metadata:
+      name: depi-board-game
+      labels:
+        app: depi-board-game
+    spec:
+      containers:
+      - name: depi-board-game
+        image: board-game:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+    
