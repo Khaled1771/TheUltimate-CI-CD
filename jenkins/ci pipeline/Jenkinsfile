@@ -25,8 +25,7 @@ pipeline {
         stage('Compile') {
             steps {
                 script {
-                    sh "cd BoardGame"
-                    sh 'mvn compile'
+                   sh "cd BoardGame && mvn compile"
                 }
             }
         }
@@ -34,8 +33,7 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    sh "cd BoardGame"   
-                    sh 'mvn test'
+                    sh "cd BoardGame && mvn test"
                 }     
             }
         }
@@ -60,7 +58,7 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script{
-                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-cred'
+                    waitForQualityGate abortPipeline: false
                 }
             }
         }
@@ -68,8 +66,7 @@ pipeline {
         stage('Build'){
             steps{
                 script {
-                    sh "cd BoardGame"
-                    sh 'mvn package'
+                    sh "cd BoardGame && mvn package"
                 }
             }
         }
@@ -77,9 +74,8 @@ pipeline {
         stage('Publish To nexus'){
             steps{
                 script {
-                    sh "cd BoardGame"
                     withMaven(globalMavenSettingsConfig: 'global-settings', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
-                        sh 'mvn deploy'
+                        sh 'cd BoardGame && mvn deploy'
                     }
                 } 
             }
@@ -88,9 +84,8 @@ pipeline {
         stage('Build & Tag Docker Image'){
             steps{
                 script { 
-                    sh "cd BoardGame"
                     withDockerRegistry(credentialsId: "docker-cred", toolName:'docker'){
-                        sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."                        
+                        sh "cd BoardGame && docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."                        
                     }
                 }
             }
@@ -98,7 +93,7 @@ pipeline {
         
         stage('Docker Image Scan') {
             steps {
-                sh 'trivy image --format table -o trivy-image-report.html ${IMAGE_NAME}:${IMAGE_TAG}'
+                sh "trivy image --format table -o trivy-image-report.html ${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
         
@@ -110,12 +105,6 @@ pipeline {
                         sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
                     }
                 }
-            }
-        }
-
-         stage("Ansible With Docker") {
-            steps{
-                sh "ansible-playbook -i Ansible/inventory Ansible/docker.yml --extra-vars 'docker_image=${IMAGE_NAME} docker_tag=${IMAGE_TAG}'"
             }
         }
     }
@@ -130,9 +119,9 @@ pipeline {
         }
 
         always {
-             sh 'docker logout'
+             sh 'docker logout || true'
 
-            scirpt{
+            script{
                 def jobName = env.JOB_NAME
                 def buildNumber = env.BUILD_NUMBER
                 def pipelineStatus = currentBuild.result ?: "UNKNOWN"
@@ -156,11 +145,11 @@ pipeline {
                 emailext(
                     subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
                     body: body,
-                    to: 'osamamostafa065@gamil.com, abdelrahman.hamouda29@gmail.com',
+                    to: 'osamamostafa065@gmail.com,abdelrahman.hamouda29@gmail.com',
                     from: "jenkins-BoardGame-CD-pipline@gmail.com",
                     replyTo: "jenkins-BoardGame-CD-pipline@gmail.com",
                     mimeType: 'text/html',
-                    attachmentsPattern: 'trivy-image-report.html , trivy-fs-report.html'
+                    attachmentsPattern: 'trivy-image-report.html,trivy-fs-report.html'
                 )
             }
         }
