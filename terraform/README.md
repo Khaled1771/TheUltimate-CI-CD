@@ -4,7 +4,7 @@ This repository contains the Terraform configuration for setting up a complete e
 
 ## Architecture Overview
 
-The infrastructure consists of three main components:
+The infrastructure consists of four main components:
 
 ### 1. Networking (VPC Module)
 - VPC with public and private subnets across multiple Availability Zones
@@ -29,6 +29,13 @@ The infrastructure consists of three main components:
 - Private networking with secure VPC integration
 - IAM roles and security groups for cluster and nodes
 - Proper dependencies to ensure correct resource creation order
+
+### 4. Monitoring Platform
+- Prometheus for metrics collection and storage
+- Grafana for metrics visualization and dashboards
+- Alert Manager for alert handling and notifications
+- Node Exporter for system-level metrics collection
+- Complete monitoring for Kubernetes, Jenkins, and infrastructure components
 
 ## Installing Terraform
 
@@ -214,6 +221,19 @@ aws eks update-kubeconfig --region $(terraform output -raw region) --name $(terr
 kubectl get nodes
 ```
 
+#### Monitoring Stack Access
+```bash
+# Get Prometheus and Grafana URLs
+PROMETHEUS_URL=$(terraform output -raw prometheus_url)
+GRAFANA_URL=$(terraform output -raw grafana_url)
+
+# Access Prometheus at:
+# ${PROMETHEUS_URL}
+
+# Access Grafana at (default credentials: admin/admin):
+# ${GRAFANA_URL}
+```
+
 ## Detailed Infrastructure Components
 
 ### VPC Module
@@ -262,6 +282,35 @@ kubectl get nodes
   - Instance type selection for cost optimization
   - Option to use Spot instances for non-critical workloads
   - IAM roles with required permissions
+
+### Monitoring Module
+- **Monitoring Server**:
+  - EC2 instance running Prometheus and Grafana
+  - Docker Compose for container orchestration
+  - Node Exporter for system metrics collection
+  - Alert Manager for notification and alerting
+  - IAM role with required permissions for CloudWatch and EKS monitoring
+
+- **Prometheus**:
+  - Time-series metrics database
+  - Standard 15-second metrics collection interval
+  - Configured to collect metrics from:
+    - Jenkins server
+    - Kubernetes cluster
+    - Node-level system metrics
+    - Self-monitoring
+
+- **Grafana**:
+  - Metrics visualization and dashboarding
+  - Pre-configured for Prometheus data source
+  - Default admin credentials for initial setup
+  - Persistent volume for dashboard storage
+
+- **Alert Manager**:
+  - Alert aggregation and de-duplication
+  - Notification routing
+  - Silencing and inhibition features
+  - Configurable for email, Slack, and other notification channels
 
 ## Security Features
 
@@ -340,6 +389,13 @@ terraform apply tfplan
 - **Server Unreachable**: Check security group rules and networking
 - **Service Not Starting**: Check user data scripts and instance logs
 - **Permission Issues**: Verify IAM roles and policies
+
+#### Monitoring Issues
+- **Prometheus Not Collecting Metrics**: Check network connectivity to target endpoints
+- **Grafana Unable to Connect to Prometheus**: Verify data source configuration
+- **Missing Kubernetes Metrics**: Check RBAC permissions for Prometheus service account
+- **Alert Manager Not Sending Notifications**: Review notification configuration and connectivity
+- **Dashboard Loading Slowly**: Check resource allocation and metrics retention periods
 
 ## Contributing
 

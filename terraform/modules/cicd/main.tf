@@ -7,20 +7,6 @@ resource "aws_instance" "jenkins" {
   vpc_security_group_ids = [aws_security_group.jenkins.id]
   iam_instance_profile   = var.jenkins_instance_profile_name
   associate_public_ip_address = true  # Ensure public IP address is assigned
-  
-  # user_data = base64encode(<<-EOF
-  #   #!/bin/bash
-  #   apt-get update
-  #   apt-get install -y openjdk-11-jdk
-  #   wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | apt-key add -
-  #   sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
-  #   apt-get update
-  #   apt-get install -y jenkins
-  #   systemctl enable jenkins
-  #   systemctl start jenkins
-  # EOF
-  # )
-  
   tags = {
     Name        = "${var.project_name}-jenkins"
     Environment = var.environment
@@ -37,37 +23,6 @@ resource "aws_instance" "nexus" {
   iam_instance_profile   = var.nexus_instance_profile_name
   associate_public_ip_address = true  # Ensure public IP address is assigned
   
-  # user_data = base64encode(<<-EOF
-  #   #!/bin/bash
-  #   apt-get update
-  #   apt-get install -y openjdk-8-jdk
-  #   mkdir -p /opt/nexus
-  #   cd /opt/nexus
-  #   wget https://download.sonatype.com/nexus/3/latest-unix.tar.gz
-  #   tar -xvf latest-unix.tar.gz
-  #   mv nexus-* nexus
-  #   adduser --disabled-password --gecos "" nexus
-  #   chown -R nexus:nexus /opt/nexus
-  #   cat > /etc/systemd/system/nexus.service << 'END'
-  #   [Unit]
-  #   Description=Nexus Repository Manager
-  #   After=network.target
-    
-  #   [Service]
-  #   Type=forking
-  #   ExecStart=/opt/nexus/nexus/bin/nexus start
-  #   ExecStop=/opt/nexus/nexus/bin/nexus stop
-  #   User=nexus
-  #   Restart=on-abort
-    
-  #   [Install]
-  #   WantedBy=multi-user.target
-  #   END
-    
-  #   systemctl enable nexus
-  #   systemctl start nexus
-  # EOF
-  # )
   
   tags = {
     Name        = "${var.project_name}-nexus"
@@ -85,55 +40,6 @@ resource "aws_instance" "sonarqube" {
   iam_instance_profile   = var.sonarqube_instance_profile_name
   associate_public_ip_address = true  # Ensure public IP address is assigned
   
-  # user_data = base64encode(<<-EOF
-  #   #!/bin/bash
-  #   apt-get update
-  #   apt-get install -y openjdk-11-jdk postgresql postgresql-contrib
-  #   systemctl start postgresql
-  #   systemctl enable postgresql
-    
-  #   sudo -u postgres psql -c "CREATE USER sonarqube WITH ENCRYPTED PASSWORD 'sonarqube';"
-  #   sudo -u postgres psql -c "CREATE DATABASE sonarqube OWNER sonarqube;"
-    
-  #   apt-get install -y unzip
-  #   mkdir -p /opt/sonarqube
-  #   cd /opt/sonarqube
-  #   wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${var.sonarqube_version}.zip
-  #   unzip sonarqube-${var.sonarqube_version}.zip
-  #   mv sonarqube-${var.sonarqube_version} sonarqube
-    
-  #   # Configure SonarQube
-  #   cat > /opt/sonarqube/sonarqube/conf/sonar.properties << 'END'
-  #   sonar.jdbc.username=sonarqube
-  #   sonar.jdbc.password=sonarqube
-  #   sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
-  #   END
-    
-  #   adduser --disabled-password --gecos "" sonarqube
-  #   chown -R sonarqube:sonarqube /opt/sonarqube
-    
-  #   cat > /etc/systemd/system/sonarqube.service << 'END'
-  #   [Unit]
-  #   Description=SonarQube service
-  #   After=network.target postgresql.service
-    
-  #   [Service]
-  #   Type=forking
-  #   ExecStart=/opt/sonarqube/sonarqube/bin/linux-x86-64/sonar.sh start
-  #   ExecStop=/opt/sonarqube/sonarqube/bin/linux-x86-64/sonar.sh stop
-  #   User=sonarqube
-  #   Group=sonarqube
-  #   Restart=on-failure
-    
-  #   [Install]
-  #   WantedBy=multi-user.target
-  #   END
-    
-  #   systemctl daemon-reload
-  #   systemctl enable sonarqube
-  #   systemctl start sonarqube
-  # EOF
-  # )
   
   tags = {
     Name        = "${var.project_name}-sonarqube"

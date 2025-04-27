@@ -3,53 +3,66 @@
 # and generates the EC2 key pair for SSH access
 
 # Variables
-BUCKET_NAME="enterprise-cicd-terraform-state"
-DYNAMODB_TABLE_NAME="enterprise-cicd-terraform-locks"
-KEY_NAME="enterprise-cicd-key"
+DATE_SUFFIX=$(date +%Y%m%d-%H%M%S)
+BASE_BUCKET_NAME="board-game-terraform-state"
+BUCKET_NAME="${BASE_BUCKET_NAME}-${DATE_SUFFIX}"
+DYNAMODB_TABLE_NAME="board-game-terraform-locks"
+KEY_NAME="board-game-key"
 KEY_FILE="${KEY_NAME}.pem"
+PREREQUISITES_FILE="prerequisites.tf"
+
+# Function to update prerequisites.tf with new bucket name
+update_prerequisites_tf() {
+    local bucket_name=$1
+    sed -i "s/bucket[[:space:]]*=[[:space:]]*\".*\"/bucket = \"$bucket_name\"/" "$PREREQUISITES_FILE"
+    echo "Updated $PREREQUISITES_FILE with new bucket name: $bucket_name"
+}
 
 # Check if the S3 bucket already exists
 if aws s3api head-bucket --bucket ${BUCKET_NAME} 2>/dev/null; then
-  echo "S3 bucket ${BUCKET_NAME} already exists. Skipping bucket creation."
+    echo "S3 bucket ${BUCKET_NAME} already exists. Skipping bucket creation."
 else
-  echo "Creating S3 bucket: ${BUCKET_NAME}"
-  aws s3 mb s3://${BUCKET_NAME} --region us-east-1
+    echo "Creating S3 bucket: ${BUCKET_NAME}"
+    aws s3 mb s3://${BUCKET_NAME} --region us-east-1
 
-  # Enable versioning on the bucket
-  aws s3api put-bucket-versioning \
-    --bucket ${BUCKET_NAME} \
-    --versioning-configuration Status=Enabled
+    # Enable versioning on the bucket
+    aws s3api put-bucket-versioning \
+        --bucket ${BUCKET_NAME} \
+        --versioning-configuration Status=Enabled
 
-  # Enable encryption on the bucket
-  aws s3api put-bucket-encryption \
-    --bucket ${BUCKET_NAME} \
-    --server-side-encryption-configuration '{
-      "Rules": [
-        {
-          "ApplyServerSideEncryptionByDefault": {
-            "SSEAlgorithm": "AES256"
-          }
-        }
-      ]
-    }'
+    # Enable encryption on the bucket
+    aws s3api put-bucket-encryption \
+        --bucket ${BUCKET_NAME} \
+        --server-side-encryption-configuration '{
+            "Rules": [
+                {
+                    "ApplyServerSideEncryptionByDefault": {
+                        "SSEAlgorithm": "AES256"
+                    }
+                }
+            ]
+        }'
 
-  # Block public access to the bucket
-  aws s3api put-public-access-block \
-    --bucket ${BUCKET_NAME} \
-    --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+    # Block public access to the bucket
+    aws s3api put-public-access-block \
+        --bucket ${BUCKET_NAME} \
+        --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+
+    # Update prerequisites.tf with the new bucket name
+    update_prerequisites_tf "${BUCKET_NAME}"
 fi
 
 # Check if the DynamoDB table already exists
 if aws dynamodb describe-table --table-name ${DYNAMODB_TABLE_NAME} 2>/dev/null; then
-  echo "DynamoDB table ${DYNAMODB_TABLE_NAME} already exists. Skipping table creation."
+    echo "DynamoDB table ${DYNAMODB_TABLE_NAME} already exists. Skipping table creation."
 else
-  echo "Creating DynamoDB table: ${DYNAMODB_TABLE_NAME}"
-  aws dynamodb create-table \
-    --table-name ${DYNAMODB_TABLE_NAME} \
-    --attribute-definitions AttributeName=LockID,AttributeType=S \
-    --key-schema AttributeName=LockID,KeyType=HASH \
-    --billing-mode PAY_PER_REQUEST \
-    --region us-east-1
+    echo "Creating DynamoDB table: ${DYNAMODB_TABLE_NAME}"
+    aws dynamodb create-table \
+        --table-name ${DYNAMODB_TABLE_NAME} \
+        --attribute-definitions AttributeName=LockID,AttributeType=S \
+        --key-schema AttributeName=LockID,KeyType=HASH \
+        --billing-mode PAY_PER_REQUEST \
+        --region us-east-1
 fi
 
 # Check if the EC2 key pair already exists
