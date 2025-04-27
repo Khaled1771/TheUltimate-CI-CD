@@ -23,28 +23,6 @@ variable "key_name" {
   default     = "enterprise-cicd-key"  
 }
 
-# Monitoring Instance Variables
-variable "monitoring_instance_type" {
-  description = "Instance type for Prometheus/Grafana monitoring server"
-  type        = string
-  default     = "t3.medium"
-}
-
-variable "monitoring_volume_size" {
-  description = "Root volume size for monitoring server in GB"
-  type        = number
-  default     = 40
-}
-
-variable "monitoring_subnet_type" {
-  description = "Subnet type for monitoring server (public or private)"
-  type        = string
-  default     = "public"
-  validation {
-    condition     = contains(["public", "private"], var.monitoring_subnet_type)
-    error_message = "Monitoring subnet type must be 'public' or 'private'."
-  }
-}
 
 # VPC Variables
 variable "vpc_cidr" {

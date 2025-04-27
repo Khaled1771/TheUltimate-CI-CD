@@ -116,29 +116,6 @@ resource "aws_iam_role" "nexus" {
   }
 }
 
-# Monitoring IAM Role
-resource "aws_iam_role" "monitoring" {
-  name = "${var.project_name}-monitoring-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name        = "${var.project_name}-monitoring-role"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
 
 # Instance profiles for EC2 instances
 resource "aws_iam_instance_profile" "jenkins" {
@@ -146,10 +123,6 @@ resource "aws_iam_instance_profile" "jenkins" {
   role = aws_iam_role.jenkins.name
 }
 
-resource "aws_iam_instance_profile" "monitoring" {
-  name = "${var.project_name}-monitoring-profile"
-  role = aws_iam_role.monitoring.name
-}
 
 resource "aws_iam_instance_profile" "sonarqube" {
   name = "${var.project_name}-sonarqube-profile"
@@ -214,25 +187,4 @@ resource "aws_iam_role_policy_attachment" "sonarqube_s3_policy" {
 resource "aws_iam_role_policy_attachment" "nexus_s3_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
   role       = aws_iam_role.nexus.name
-}
-
-# Attach required policies to Monitoring Role
-resource "aws_iam_role_policy_attachment" "monitoring_eks_readonly_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.monitoring.name
-}
-
-resource "aws_iam_role_policy_attachment" "monitoring_ssm_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  role       = aws_iam_role.monitoring.name
-}
-
-resource "aws_iam_role_policy_attachment" "monitoring_cloudwatch_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchFullAccess"
-  role       = aws_iam_role.monitoring.name
-}
-
-resource "aws_iam_role_policy_attachment" "monitoring_ec2_readonly_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
-  role       = aws_iam_role.monitoring.name
 }
