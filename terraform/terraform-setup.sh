@@ -3,9 +3,7 @@
 # and generates the EC2 key pair for SSH access
 
 # Variables
-DATE_SUFFIX=$(date +%Y%m%d-%H%M%S)
-BASE_BUCKET_NAME="board-game-terraform-state"
-BUCKET_NAME="${BASE_BUCKET_NAME}-${DATE_SUFFIX}"
+BUCKET_NAME="board-game-terraform-state"
 DYNAMODB_TABLE_NAME="board-game-terraform-locks"
 KEY_NAME="board-game-key"
 KEY_FILE="${KEY_NAME}.pem"
@@ -15,9 +13,12 @@ REGION_NAME="us-east-1"
 # Function to update prerequisites.tf with new bucket name
 update_prerequisites_tf() {
     local bucket_name=$1
+    local region_name=$2
     sed -i "s/bucket[[:space:]]*=[[:space:]]*\".*\"/bucket = \"$bucket_name\"/" "$PREREQUISITES_FILE"
-    echo "Updated $PREREQUISITES_FILE with new bucket name: $bucket_name"
+    sed -i "s/region[[:space:]]*=[[:space:]]*\".*\"/region = \"$region_name\"/" "$PREREQUISITES_FILE"
+    echo "Updated $PREREQUISITES_FILE with new bucket name: $bucket_name and region: $region_name"
 }
+
 
 # Check if the S3 bucket already exists
 if aws s3api head-bucket --bucket ${BUCKET_NAME} 2>/dev/null; then
@@ -49,8 +50,8 @@ else
         --bucket ${BUCKET_NAME} \
         --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 
-    # Update prerequisites.tf with the new bucket name
-    update_prerequisites_tf "${BUCKET_NAME}"
+    # Update prerequisites.tf with the new bucket name and region name
+    update_prerequisites_tf "${BUCKET_NAME}" "${REGION_NAME}"
 fi
 
 # Check if the DynamoDB table already exists
