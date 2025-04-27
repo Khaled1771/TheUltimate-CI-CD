@@ -25,7 +25,9 @@ pipeline {
         stage('Compile') {
             steps {
                 script {
-                   sh "cd BoardGame && mvn compile"
+                    dir('BoardGame') {
+                        sh 'mvn compile'
+                    }
                 }
             }
         }
@@ -33,14 +35,16 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    sh "cd BoardGame && mvn test"
+                    dir('BoardGame') {
+                        sh 'mvn test'
+                    }
                 }     
             }
         }
         
         stage('File System Scan') {
             steps {
-                sh 'trivy fs --format table -o trivy-fs-report.html .'
+                sh 'trivy fs --format json -o trivy-fs-report.json .'
             }
         }
         
@@ -58,7 +62,7 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script{
-                    waitForQualityGate abortPipeline: false
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -66,18 +70,24 @@ pipeline {
         stage('Build'){
             steps{
                 script {
-                    sh "cd BoardGame && mvn package"
+                    dir('BoardGame') {
+                        sh 'mvn package'
+                    }
                 }
             }
         }
-        
-        stage('Publish To nexus'){
-            steps{
-                script {
-                    withMaven(globalMavenSettingsConfig: 'global-settings', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
-                        sh 'cd BoardGame && mvn deploy'
+
+        stage('Publish To Nexus') {
+            steps {
+                retry(3) {
+                    script {
+                        withMaven(globalMavenSettingsConfig: 'global-settings', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
+                            dir('BoardGame') {
+                                sh 'mvn deploy'
+                            }
+                        }
                     }
-                } 
+                }
             }
         }
         
@@ -85,7 +95,9 @@ pipeline {
             steps{
                 script { 
                     withDockerRegistry(credentialsId: "docker-cred", toolName:'docker'){
-                        sh "cd BoardGame && docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."                        
+                        dir('BoardGame') {
+                            sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."                        
+                        }
                     }
                 }
             }
@@ -93,7 +105,7 @@ pipeline {
         
         stage('Docker Image Scan') {
             steps {
-                sh "trivy image --format table -o trivy-image-report.html ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh "trivy image --format json -o trivy-image-report.json ${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
         
@@ -119,7 +131,7 @@ pipeline {
         }
 
         always {
-             sh 'docker logout || true'
+             sh 'docker logout'
 
             script{
                 def jobName = env.JOB_NAME
@@ -149,7 +161,7 @@ pipeline {
                     from: "jenkins-BoardGame-CD-pipline@gmail.com",
                     replyTo: "jenkins-BoardGame-CD-pipline@gmail.com",
                     mimeType: 'text/html',
-                    attachmentsPattern: 'trivy-image-report.html,trivy-fs-report.html'
+                    attachmentsPattern: 'trivy-image-report.json,trivy-fs-report.json'
                 )
             }
         }

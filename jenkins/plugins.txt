@@ -13,8 +13,4 @@ pipleine maven integration
 docker pipline 
 docker 
 
--kubernates
-Kubernates client api
-Kubernates credentials 
-Kubernates
-Kubernates cli
+
