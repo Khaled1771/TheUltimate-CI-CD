@@ -27,7 +27,7 @@ sonarqube-server ansible_host=${SONARQUBE_IP} ansible_user=ec2-user
 nexus-server ansible_host=${NEXUS_IP} ansible_user=ec2-user
 
 [all:vars]
-ansible_ssh_private_key_file=./board-game-key.pem
+ansible_ssh_private_key_file=../terraform/board-game-key.pem
 EOF
 
 echo "Generated inventory file:"
