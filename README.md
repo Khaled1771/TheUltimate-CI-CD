@@ -1,11 +1,11 @@
-# Enterprise CI/CD DevOps Implementation Blueprint
+# board-game CI/CD DevOps Implementation Blueprint
 
 ## Project Overview
 
-This repository contains the comprehensive blueprint and implementation plan for an enterprise-grade CI/CD DevOps pipeline architecture. It leverages industry-leading technologies including Docker, Kubernetes, Ansible, AWS, Jenkins, Prometheus, Terraform, Helm, and Grafana to deliver a scalable, secure, and automated software delivery platform.
+This repository contains the comprehensive blueprint and implementation plan for an board-game-grade CI/CD DevOps pipeline architecture. It leverages industry-leading technologies including Docker, Kubernetes, Ansible, AWS, Jenkins, Prometheus, Terraform, Helm, and Grafana to deliver a scalable, secure, and automated software delivery platform.
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x400?text=Enterprise+CI/CD+Architecture" alt="Enterprise CI/CD Architecture Diagram" width="800"/>
+  <img src="https://via.placeholder.com/800x400?text=board-game+CI/CD+Architecture" alt="board-game CI/CD Architecture Diagram" width="800"/>
 </div>
 
 ## Table of Contents

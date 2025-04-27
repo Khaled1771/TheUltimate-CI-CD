@@ -82,10 +82,10 @@ jenkins/.cache/
 *.key
 secrets/
 # Project specific keys
-enterprise-cicd-key
-enterprise-cicd-key.pem
-terraform/enterprise-cicd-key
-terraform/enterprise-cicd-key.pem
+board-game-cicd-key
+board-game-cicd-key.pem
+terraform/board-game-cicd-key
+terraform/board-game-cicd-key.pem
 
 #------------------------------------------------
 # IDE & Editor specific

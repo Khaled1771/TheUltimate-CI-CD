@@ -9,10 +9,10 @@ terraform {
   
   # Use existing S3 bucket and DynamoDB table for state management
   backend "s3" {
-    bucket         = "enterprise-cicd-terraform-state"
+    bucket         = "board-game-terraform-state-20250427-170644"
     key            = "global/s3/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "enterprise-cicd-terraform-locks"
+    dynamodb_table = "board-game-terraform-locks"
     encrypt        = true
   }
 }

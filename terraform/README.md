@@ -1,6 +1,6 @@
-# Enterprise CI/CD Infrastructure
+# board-game CI/CD Infrastructure
 
-This repository contains the Terraform configuration for setting up a complete enterprise-grade CI/CD infrastructure on AWS. The infrastructure is designed to be scalable, secure, and follows AWS best practices.
+This repository contains the Terraform configuration for setting up a complete board-game-grade CI/CD infrastructure on AWS. The infrastructure is designed to be scalable, secure, and follows AWS best practices.
 
 ## Architecture Overview
 
@@ -124,9 +124,9 @@ nano terraform.tfvars
 # Required Variables
 aws_region         = "us-east-1"
 environment        = "dev"
-project_name       = "enterprise-cicd"
+project_name       = "board-game-cicd"
 vpc_cidr           = "10.0.0.0/16"
-key_name           = "enterprise-cicd-key"
+key_name           = "board-game-cicd-key"
 
 # Optional - Set to override defaults
 availability_zones     = ["us-east-1a", "us-east-1b", "us-east-1c"]

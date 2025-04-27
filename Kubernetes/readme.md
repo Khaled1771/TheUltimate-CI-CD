@@ -1,6 +1,6 @@
-# Enterprise Kubernetes Deployment
+# board-game Kubernetes Deployment
 
-This repository contains the Kubernetes manifests and Helm charts for deploying a complete enterprise-grade application on a Kubernetes cluster. The deployment is designed to be scalable, secure, and follows Kubernetes best practices.
+This repository contains the Kubernetes manifests and Helm charts for deploying a complete board-game-grade application on a Kubernetes cluster. The deployment is designed to be scalable, secure, and follows Kubernetes best practices.
 
 ## Architecture Overview
 

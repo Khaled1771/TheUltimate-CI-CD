@@ -14,13 +14,13 @@ variable "environment" {
 variable "project_name" {
   description = "Name of the project for resource naming and tagging"
   type        = string
-  default     = "enterprise-cicd"
+  default     = "board-game-cicd"
 }
 
 variable "key_name" {
   description = "Name of the SSH key pair for EC2 instances"
   type        = string
-  default     = "enterprise-cicd-key"  
+  default     = "board-game-cicd-key"  
 }
 
 
@@ -72,7 +72,7 @@ variable "availability_zones" {
 variable "cluster_name" {
   description = "Name of the EKS cluster"
   type        = string
-  default     = "enterprise-cicd-cluster"
+  default     = "board-game-cicd-cluster"
 }
 
 variable "cluster_version" {
