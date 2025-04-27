@@ -13,3 +13,58 @@
   - name: Verify Kubernetes LoadBalancer
     shell: kubectl get svc
 
+- name: Verify Monitoring Stack
+  hosts: monitoring
+  become: yes
+  tasks:
+    - name: Check if Prometheus container is running
+      shell: docker ps | grep prometheus
+      register: prometheus_status
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Check if Grafana container is running
+      shell: docker ps | grep grafana
+      register: grafana_status
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Check if Alert Manager container is running
+      shell: docker ps | grep alertmanager
+      register: alertmanager_status
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Check if Node Exporter container is running
+      shell: docker ps | grep node-exporter
+      register: node_exporter_status
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Verify Prometheus is accessible
+      uri:
+        url: http://localhost:9090/-/healthy
+        method: GET
+        status_code: 200
+      register: prometheus_health
+      ignore_errors: yes
+
+    - name: Verify Grafana is accessible
+      uri:
+        url: http://localhost:3000/api/health
+        method: GET
+        status_code: 200
+      register: grafana_health
+      ignore_errors: yes
+
+    - name: Report monitoring stack status
+      debug:
+        msg: |
+          Monitoring Stack Status:
+          - Prometheus container: {{ 'RUNNING' if prometheus_status.rc == 0 else 'NOT RUNNING' }}
+          - Grafana container: {{ 'RUNNING' if grafana_status.rc == 0 else 'NOT RUNNING' }}
+          - Alert Manager container: {{ 'RUNNING' if alertmanager_status.rc == 0 else 'NOT RUNNING' }}
+          - Node Exporter container: {{ 'RUNNING' if node_exporter_status.rc == 0 else 'NOT RUNNING' }}
+          - Prometheus health check: {{ 'PASSED' if prometheus_health.status == 200 else 'FAILED' }}
+          - Grafana health check: {{ 'PASSED' if grafana_health.status == 200 else 'FAILED' }}
+
