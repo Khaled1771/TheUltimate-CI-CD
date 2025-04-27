@@ -20,7 +20,7 @@ variable "project_name" {
 variable "key_name" {
   description = "Name of the SSH key pair for EC2 instances"
   type        = string
-  default     = "board-game-cicd-key"  
+  default     = "board-game-key"  
 }
 
 
