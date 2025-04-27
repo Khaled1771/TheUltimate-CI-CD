@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # 1. Terraform init & apply
-# terraform init
+terraform init -reconfigure
 terraform apply -auto-approve
 
 # 2. Capture IPs as JSON

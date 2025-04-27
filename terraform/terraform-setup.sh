@@ -10,6 +10,7 @@ DYNAMODB_TABLE_NAME="board-game-terraform-locks"
 KEY_NAME="board-game-key"
 KEY_FILE="${KEY_NAME}.pem"
 PREREQUISITES_FILE="prerequisites.tf"
+REGION_NAME="us-east-1"
 
 # Function to update prerequisites.tf with new bucket name
 update_prerequisites_tf() {
@@ -23,7 +24,7 @@ if aws s3api head-bucket --bucket ${BUCKET_NAME} 2>/dev/null; then
     echo "S3 bucket ${BUCKET_NAME} already exists. Skipping bucket creation."
 else
     echo "Creating S3 bucket: ${BUCKET_NAME}"
-    aws s3 mb s3://${BUCKET_NAME} --region us-east-1
+    aws s3 mb s3://${BUCKET_NAME} --region ${REGION_NAME}
 
     # Enable versioning on the bucket
     aws s3api put-bucket-versioning \
@@ -62,7 +63,7 @@ else
         --attribute-definitions AttributeName=LockID,AttributeType=S \
         --key-schema AttributeName=LockID,KeyType=HASH \
         --billing-mode PAY_PER_REQUEST \
-        --region us-east-1
+        --region ${REGION_NAME}
 fi
 
 # Check if the EC2 key pair already exists
@@ -78,7 +79,7 @@ if aws ec2 describe-key-pairs --key-names ${KEY_NAME} 2>/dev/null; then
       --key-name ${KEY_NAME} \
       --query 'KeyMaterial' \
       --output text > ${KEY_FILE}
-      --region us-east-1
+      --region ${REGION_NAME}
 
     # Set proper permissions for the key file
     chmod 400 ${KEY_FILE}
@@ -90,7 +91,7 @@ else
     --key-name ${KEY_NAME} \
     --query 'KeyMaterial' \
     --output text > ${KEY_FILE}
-    --region us-east-1
+    --region ${REGION_NAME}
   
   # Set proper permissions for the key file
   chmod 400 ${KEY_FILE}
