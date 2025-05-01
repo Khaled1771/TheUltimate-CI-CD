@@ -9,12 +9,3 @@ image:
 service:
   type: ClusterIP
   port: 8080
-
-ingress:
-  enabled: true
-  className: "nginx"
-  host: "board-game.depi.com"
-  annotations:
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-  tls:
-    secretName: "board-game-tls-secret"

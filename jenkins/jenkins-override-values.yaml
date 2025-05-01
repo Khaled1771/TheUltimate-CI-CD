@@ -1,0 +1,10 @@
+controller:
+  image:
+    repository: osamaseyam/custom-jenkins
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  admin:
+    enabled: true
+    username: admin
+    password: admin
