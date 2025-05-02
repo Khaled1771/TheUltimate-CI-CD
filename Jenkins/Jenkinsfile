@@ -50,9 +50,9 @@ pipeline {
         
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
+                withSonarQubeEnv('Sonar') {
                     sh '''
-                       $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=BoardGame-dev -Dsonar.projectKey=BoardGame-dev \
+                       $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=board-game-ci -Dsonar.projectKey=board-game-ci \
                        -Dsonar.java.binaries=. 
                     '''
                 }
