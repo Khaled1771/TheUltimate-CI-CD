@@ -9,8 +9,10 @@ This project implements a complete CI/CD pipeline for a Java Spring Boot board g
 - **Infrastructure as Code (IaC)** with Terraform
 - **Configuration Management** with Ansible
 - **Continuous Integration** with Jenkins
+- **Continuous Delivery** with ArgoCD
 - **Container Registry** with Nexus Repository Manager
 - **Container Orchestration** with Kubernetes
+- **Observability and Monitoring** with Prometheus and Grafana
 
 ## Repository Structure
 
@@ -20,6 +22,7 @@ TheUltimate-CI-CD/
 ├── BoardGame/            # Sample Java Spring Boot application
 ├── Jenkins/              # Jenkins pipeline configuration
 ├── Kubernetes/           # Kubernetes deployment manifests
+├── Monitoring/           # Prometheus and Grafana configurations
 └── Terraform/            # Infrastructure as code
 ```
 
@@ -36,8 +39,11 @@ To implement the complete CI/CD pipeline, follow these steps in order:
 3. **CI Pipeline Setup**: Configure Jenkins and create the CI pipeline
    - After server configuration, check the [Jenkins directory](./Jenkins/)
 
-4. **Application Deployment**: Deploy the application to Kubernetes
-   - Finally, head to the [Kubernetes directory](./Kubernetes/)
+4. **CD Pipeline Setup**: Install and configure ArgoCD for continuous delivery
+   - Set up GitOps-based deployments with the [Kubernetes directory](./Kubernetes/)
+
+5. **Monitoring Setup**: Implement observability for your application and infrastructure
+   - Complete the setup with the [Monitoring directory](./Monitoring/)
 
 ## Prerequisites
 
@@ -68,7 +74,8 @@ This project implements the following CI/CD lifecycle:
 4. **Containerization**: Application is packaged as a Docker image
 5. **Security Scanning**: Docker image is scanned for vulnerabilities
 6. **Artifact Storage**: Docker image is pushed to Nexus
-7. **Deployment**: Application is deployed to Kubernetes
+7. **Continuous Delivery**: ArgoCD detects new Docker image and updates the deployment
+8. **Monitoring**: Application and infrastructure are monitored with Prometheus and Grafana
 
 ## License
 

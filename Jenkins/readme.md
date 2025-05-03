@@ -1,15 +1,15 @@
-# Jenkins CI/CD Pipeline Configuration
+# Jenkins CI Pipeline Configuration
 
-This directory contains the configuration and scripts for setting up and managing Jenkins pipelines for the Ultimate CI/CD project. Jenkins is the core CI/CD tool that automates the build, test, and deployment processes.
+This directory contains the configuration and scripts for setting up and managing Jenkins pipelines for the Ultimate CI/CD project. Jenkins is the core Continuous Integration (CI) tool that automates the build, test, and containerization processes, while ArgoCD handles the Continuous Delivery (CD) aspect.
 
 ## Overview
 
-The Jenkins pipeline is divided into two main components:
+In this project's workflow:
 
-1. **CI Pipeline**: Focuses on building, testing, and packaging the application
-2. **CD Pipeline**: Handles the deployment of the application to Kubernetes
+1. **CI Pipeline (Jenkins)**: Focuses on building, testing, and packaging the application as a Docker image
+2. **CD Pipeline (ArgoCD)**: Handles the deployment of the application to Kubernetes using GitOps principles
 
-These pipelines leverage tools like Maven, Docker, and Kubernetes to ensure a robust and automated workflow.
+The Jenkins pipeline leverages tools like Maven, Docker, and security scanners to ensure a robust and automated workflow before handing off to ArgoCD for deployment.
 
 ## Prerequisites
 
@@ -26,7 +26,6 @@ Before setting up the Jenkins pipeline, ensure you have:
 3. **Credentials Configuration**:
    - Docker Hub credentials for pushing images
    - Git credentials for accessing the repository
-   - Kubernetes credentials for deployment
 
 ## Jenkins Initial Setup
 
@@ -50,8 +49,8 @@ ssh ec2-user@<JENKINS_IP> "sudo cat /var/lib/jenkins/secrets/initialAdminPasswor
    - Maven Integration
    - JUnit
    - Credentials Binding
-   - Email Extension
    - Timestamper
+   - Prometheus metrics (for monitoring)
 
 Alternatively, you can use the script in this directory to install plugins automatically:
 
@@ -117,16 +116,6 @@ Navigate to "Manage Jenkins" > "Manage Credentials" > "Global" > "Add Credential
    - Script path: `Jenkins/Jenkinsfile`
    - Click "Save"
 
-### CD Pipeline Setup (Optional)
-
-1. Create another Pipeline job for deployment:
-   - Click "New Item"
-   - Enter a name (e.g., "BoardGame-CD")
-   - Select "Pipeline" and click "OK"
-
-2. Configure the CD pipeline:
-   - Same as CI, but use `Jenkins/cd-pipeline/Jenkinsfile` if available
-
 ### Understanding the Jenkinsfile
 
 The `Jenkinsfile` in this directory defines a declarative pipeline with the following stages:
@@ -138,14 +127,36 @@ The `Jenkinsfile` in this directory defines a declarative pipeline with the foll
 5. **Build**: Packages the application using Maven
 6. **Build & Tag Docker Image**: Creates a Docker image of the application
 7. **Docker Image Scan**: Scans the Docker image for vulnerabilities
-8. **Push Docker Image**: Pushes the image to Docker Hub
+8. **Push Docker Image**: Pushes the image to Docker Hub (trigger for ArgoCD)
+
+## CI/CD Workflow Integration
+
+### How Jenkins (CI) and ArgoCD (CD) Work Together
+
+1. **Jenkins Responsibility (CI)**: 
+   - Build and test the application code
+   - Create and scan Docker images
+   - Push images to Docker Hub with appropriate tags
+   - Optional: Update image tag in Git repository for ArgoCD to detect
+
+2. **ArgoCD Responsibility (CD)**:
+   - Monitor Git repository for changes in Kubernetes manifests
+   - Automatically deploy new versions when detected
+   - Ensure deployed state matches desired state in Git
+   - Provide visualization and management of deployments
+
+For ArgoCD setup and configuration, please refer to the [Kubernetes directory](../Kubernetes/) documentation.
 
 ## Running the Pipeline
 
 1. Navigate to your CI pipeline job
 2. Click "Build Now" to start the pipeline
 3. Monitor the progress in the "Stage View"
-4. Once complete, navigate to the CD pipeline if configured, and click "Build Now"
+4. Once complete, ensure Docker images are pushed to Docker Hub for ArgoCD to detect
+
+## Pushing Docker Images to Docker Hub
+
+Ensure your Docker images are being correctly pushed to Docker Hub with appropriate tags. This is critical for ArgoCD to detect and deploy updates.
 
 ## Customizing the Pipeline
 
@@ -159,6 +170,26 @@ To customize the pipeline for your specific needs:
 2. **Change Build Parameters**:
    - Environment variables can be modified in the Jenkinsfile
    - Add parameters in the job configuration for dynamic values
+
+## Monitoring Jenkins
+
+To monitor Jenkins performance and health:
+
+1. **Install the Prometheus Plugin** (if not already installed)
+   - Navigate to "Manage Jenkins" > "Manage Plugins" > "Available"
+   - Search for and install "Prometheus metrics"
+   
+2. **Configure Prometheus Metrics**
+   - The plugin exposes metrics at `/prometheus` endpoint
+   - Verify metrics are available by visiting `http://<JENKINS_IP>:8080/prometheus/`
+   
+3. **Configure Prometheus to Scrape Jenkins**
+   - Use the configuration in the [Monitoring directory](../Monitoring/)
+   - Apply the `jenkins-scrapeConfig.yaml` to your Prometheus instance
+
+4. **Visualize Metrics in Grafana**
+   - Import the Jenkins dashboard (ID: 9964) into your Grafana instance
+   - Configure alerts for key metrics like job failure rate and queue size
 
 ## Troubleshooting
 
@@ -182,8 +213,9 @@ To customize the pipeline for your specific needs:
 
 ## Next Steps
 
-Once your Jenkins pipeline is set up and running successfully:
+Once your Jenkins CI pipeline is set up and running successfully:
 
-1. Customize the pipeline for your specific workflow needs
-2. Configure webhooks for automatic pipeline triggers on code changes
-3. Proceed to the [Kubernetes directory](../Kubernetes/) to set up the deployment manifests
+1. Ensure your Docker images are being correctly pushed to Docker Hub
+2. Proceed to the [Kubernetes directory](../Kubernetes/) to set up ArgoCD for continuous delivery
+3. Configure the ArgoCD application to watch your Docker image for updates
+4. Set up monitoring by following the instructions in the [Monitoring directory](../Monitoring/)

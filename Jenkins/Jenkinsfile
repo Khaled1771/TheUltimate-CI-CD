@@ -10,10 +10,9 @@ pipeline {
         GIT_REPO = 'https://github.com/Khaled1771/TheUltimate-CI-CD.git'
         BRANCH = 'dev'
         
-        IMAGE_NAME = 'osamaseyam/board-game'
-        IMAGE_TAG = "${BUILD_NUMBER}"  // Using build number instead of 'latest'
+        IMAGE_NAME = '' // Set your Docker image name here
+        IMAGE_TAG = "latest"  
         
-        // Feature flags for local testing - set to false to skip stages
         PUSH_TO_NEXUS = 'false'
         PUSH_TO_DOCKER = 'false'
     }
@@ -21,7 +20,7 @@ pipeline {
     stages {
         stage('Git Checkout') {
             steps {
-                checkout scm  // Using checkout scm instead of git step
+                checkout scm  
             }
         }
         
