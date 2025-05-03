@@ -10,6 +10,7 @@ This repository contains the comprehensive blueprint and implementation plan for
 
 ## Table of Contents
 
+
 1. [Project Phases](#project-phases)
 2. [Workflow Design](#workflow-design)
 3. [Implementation Timeline](#implementation-timeline)
