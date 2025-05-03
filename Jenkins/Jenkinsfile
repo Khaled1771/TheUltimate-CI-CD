@@ -26,31 +26,31 @@ pipeline {
             steps {
                 script {
                     dir('BoardGame') {
-                        sh 'mvn compile -Dmaven.test.skip=true'
+                        sh 'mvn compile'
                     }
                 }
             }
         }
         
-        // stage('Test') {
-        //     steps {
-        //         script {
-        //             dir('BoardGame') {
-        //                 sh 'mvn test'
-        //             }
-        //         }     
-        //     }
-        // }
+        stage('Test') {
+            steps {
+                script {
+                    dir('BoardGame') {
+                        sh 'mvn test'
+                    }
+                }     
+            }
+        }
         
-        // stage('File System Scan') {
-        //     steps {
-        //         sh 'trivy fs --format json -o trivy-fs-report.json .'
-        //     }
-        // }
+        stage('File System Scan') {
+            steps {
+                sh 'trivy fs --format json -o trivy-fs-report.json .'
+            }
+        }
         
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('Sonar-scanner') {
+                withSonarQubeEnv('Sonar') {
                     sh '''
                        $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=board-game-ci -Dsonar.projectKey=board-game-ci \
                        -Dsonar.java.binaries=. 
@@ -103,11 +103,11 @@ pipeline {
             }
         }
         
-        // stage('Docker Image Scan') {
-        //     steps {
-        //         sh "trivy image --format json -o trivy-image-report.json ${IMAGE_NAME}:${IMAGE_TAG}"
-        //     }
-        // }
+        stage('Docker Image Scan') {
+            steps {
+                sh "trivy image --format json -o trivy-image-report.json ${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
         
         
         stage('Push Docker Image'){
@@ -130,38 +130,40 @@ pipeline {
             echo 'Pipeline execution failed. Check the logs for more information.'
         }
 
-        // always {
-        //     script{
-        //         def jobName = env.JOB_NAME
-        //         def buildNumber = env.BUILD_NUMBER
-        //         def pipelineStatus = currentBuild.result ?: "UNKNOWN"
-        //         def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+        always {
+             sh 'docker logout'
+
+            script{
+                def jobName = env.JOB_NAME
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: "UNKNOWN"
+                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
                 
-        //         def body = """
-        //             <html>
-        //                 <body>
-        //                     <div style="border: 4px solid ${bannerColor}; padding: 10px;">
-        //                         <h2> ${jobName} - Build ${buildNumber} </h2>
-        //                         <div style="background-color: ${bannerColor}; padding: 10px">
-        //                             <h3 style="color: white;"> Pipeline Status: ${pipelineStatus.toUpperCase()} </h3>
-        //                         </div>
-        //                         <p> Check the <a href="${BUILD_URL}"> console output. </a></p>
-        //                     </div>
-        //                 </body>
-        //             </html>
-        //         """
+                def body = """
+                    <html>
+                        <body>
+                            <div style="border: 4px solid ${bannerColor}; padding: 10px;">
+                                <h2> ${jobName} - Build ${buildNumber} </h2>
+                                <div style="background-color: ${bannerColor}; padding: 10px">
+                                    <h3 style="color: white;"> Pipeline Status: ${pipelineStatus.toUpperCase()} </h3>
+                                </div>
+                                <p> Check the <a href="${BUILD_URL}"> console output. </a></p>
+                            </div>
+                        </body>
+                    </html>
+                """
                 
                 
-        //         emailext(
-        //             subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
-        //             body: body,
-        //             to: 'osamamostafa065@gmail.com,abdelrahman.hamouda29@gmail.com',
-        //             from: "jenkins-BoardGame-CD-pipline@gmail.com",
-        //             replyTo: "jenkins-BoardGame-CD-pipline@gmail.com",
-        //             mimeType: 'text/html',
-        //             attachmentsPattern: 'trivy-image-report.json,trivy-fs-report.json'
-        //         )
-        //     }
-        // }
+                emailext(
+                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+                    body: body,
+                    to: 'osamamostafa065@gmail.com,abdelrahman.hamouda29@gmail.com',
+                    from: "jenkins-BoardGame-CD-pipline@gmail.com",
+                    replyTo: "jenkins-BoardGame-CD-pipline@gmail.com",
+                    mimeType: 'text/html',
+                    attachmentsPattern: 'trivy-image-report.json,trivy-fs-report.json'
+                )
+            }
+        }
     }
 }
