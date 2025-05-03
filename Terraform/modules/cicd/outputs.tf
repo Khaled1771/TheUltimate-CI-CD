@@ -1,10 +1,10 @@
 output "jenkins_public_ip" {
-  description = "Public IP address of the Jenkins server"
+  description = "Public IP of Jenkins server"
   value       = aws_instance.jenkins.public_ip
 }
 
 output "jenkins_private_ip" {
-  description = "Private IP address of the Jenkins server"
+  description = "Private IP of Jenkins server"
   value       = aws_instance.jenkins.private_ip
 }
 
@@ -14,33 +14,18 @@ output "jenkins_instance_id" {
 }
 
 output "nexus_public_ip" {
-  description = "Public IP address of the Nexus server"
+  description = "Public IP of Nexus server"
   value       = aws_instance.nexus.public_ip
 }
 
 output "nexus_private_ip" {
-  description = "Private IP address of the Nexus server"
+  description = "Private IP of Nexus server"
   value       = aws_instance.nexus.private_ip
 }
 
 output "nexus_instance_id" {
   description = "Instance ID of the Nexus server"
   value       = aws_instance.nexus.id
-}
-
-output "sonarqube_public_ip" {
-  description = "Public IP address of the SonarQube server"
-  value       = aws_instance.sonarqube.public_ip
-}
-
-output "sonarqube_private_ip" {
-  description = "Private IP address of the SonarQube server"
-  value       = aws_instance.sonarqube.private_ip
-}
-
-output "sonarqube_instance_id" {
-  description = "Instance ID of the SonarQube server"
-  value       = aws_instance.sonarqube.id
 }
 
 output "artifacts_bucket_name" {
@@ -56,11 +41,6 @@ output "jenkins_security_group_id" {
 output "nexus_security_group_id" {
   description = "ID of the Nexus security group"
   value       = aws_security_group.nexus.id
-}
-
-output "sonarqube_security_group_id" {
-  description = "ID of the SonarQube security group"
-  value       = aws_security_group.sonarqube.id
 }
 
 output "jenkins_iam_role_arn" {

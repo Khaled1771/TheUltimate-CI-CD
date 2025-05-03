@@ -30,23 +30,6 @@ resource "aws_instance" "nexus" {
   }
 }
 
-# SonarQube Instance
-resource "aws_instance" "sonarqube" {
-  ami                    = var.ami_id
-  instance_type          = var.instance_type
-  subnet_id              = var.public_subnet_ids[0]  # Changed from private to public subnet
-  key_name               = var.key_name
-  vpc_security_group_ids = [aws_security_group.sonarqube.id]
-  iam_instance_profile   = var.sonarqube_instance_profile_name
-  associate_public_ip_address = true  # Ensure public IP address is assigned
-  
-  
-  tags = {
-    Name        = "${var.project_name}-sonarqube"
-    Environment = var.environment
-  }
-}
-
 # Jenkins Security Group
 resource "aws_security_group" "jenkins" {
   name        = "${var.project_name}-jenkins-sg"
@@ -115,42 +98,6 @@ resource "aws_security_group" "nexus" {
   
   tags = {
     Name        = "${var.project_name}-nexus-sg"
-    Environment = var.environment
-  }
-}
-
-# SonarQube Security Group
-resource "aws_security_group" "sonarqube" {
-  name        = "${var.project_name}-sonarqube-sg"
-  description = "Security group for SonarQube server"
-  vpc_id      = var.vpc_id
-  
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.admin_cidr]
-    description = "SSH access from admin CIDR"
-  }
-  
-  ingress {
-    from_port   = 9000
-    to_port     = 9000
-    protocol    = "tcp"
-    cidr_blocks = [var.admin_cidr]
-    description = "SonarQube web interface from admin CIDR"
-  }
-  
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow all outbound traffic"
-  }
-  
-  tags = {
-    Name        = "${var.project_name}-sonarqube-sg"
     Environment = var.environment
   }
 }

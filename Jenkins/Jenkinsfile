@@ -11,22 +11,29 @@ pipeline {
         BRANCH = 'dev'
         
         IMAGE_NAME = 'osamaseyam/board-game'
-        IMAGE_TAG = 'latest'
-        SCANNER_HOME = tool 'sonar-scanner'
+        IMAGE_TAG = "${BUILD_NUMBER}"  // Using build number instead of 'latest'
+        
+        // Feature flags for local testing - set to false to skip stages
+        PUSH_TO_NEXUS = 'false'
+        PUSH_TO_DOCKER = 'false'
     }
     
     stages {
         stage('Git Checkout') {
             steps {
-                git branch: "${BRANCH}", credentialsId: 'git-cred', url: "${GIT_REPO}"
+                checkout scm  // Using checkout scm instead of git step
             }
         }
         
         stage('Compile') {
             steps {
                 script {
-                    dir('BoardGame') {
-                        sh 'mvn compile'
+                    try {
+                        dir('BoardGame') {
+                            sh 'mvn compile -Dmaven.test.skip=true'
+                        }
+                    } catch(Exception e) {
+                        error "Compilation failed: ${e.message}"
                     }
                 }
             }
@@ -35,8 +42,12 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    dir('BoardGame') {
-                        sh 'mvn test'
+                    try {
+                        dir('BoardGame') {
+                            sh 'mvn test'
+                        }
+                    } catch(Exception e) {
+                        error "Tests failed: ${e.message}"
                     }
                 }     
             }
@@ -44,46 +55,34 @@ pipeline {
         
         stage('File System Scan') {
             steps {
-                sh 'trivy fs --format json -o trivy-fs-report.json .'
+                script {
+                    try {
+                        sh 'trivy fs --format json -o trivy-fs-report.json --exit-code 0 --severity HIGH,CRITICAL .'
+                    } catch(Exception e) {
+                        echo "Warning: Trivy scan found issues, but continuing pipeline: ${e.message}"
+                    }
+                }
             }
         }
-        
-        // stage('SonarQube Analysis') {
-        //     steps {
-        //         script {
-        //             dir('BoardGame') {
-        //                 withSonarQubeEnv('sonar') {
-        //                     sh ''' 
-        //                         $SCANNER_HOME/bin/sonar-scanner \
-        //                         -Dsonar.projectName=board-game-ci \
-        //                         -Dsonar.projectKey=board-game-ci \
-        //                         -Dsonar.java.binariessources=. 
-        //                     '''
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-            
-        // stage('Quality Gate') {
-        //     steps {
-        //         script{
-        //             waitForQualityGate abortPipeline: false, credentialsId: 'sonar-cred'
-        //         }
-        //     }
-        // }
         
         stage('Build'){
             steps{
                 script {
-                    dir('BoardGame') {
-                        sh 'mvn package'
+                    try {
+                        dir('BoardGame') {
+                            sh 'mvn package'
+                        }
+                    } catch(Exception e) {
+                        error "Build failed: ${e.message}"
                     }
                 }
             }
         }
 
         stage('Publish To Nexus') {
+            when {
+                environment name: 'PUSH_TO_NEXUS', value: 'true'
+            }
             steps {
                 retry(3) {
                     script {
@@ -100,10 +99,14 @@ pipeline {
         stage('Build & Tag Docker Image'){
             steps{
                 script { 
-                    withDockerRegistry(credentialsId: "docker-cred", toolName:'docker'){
-                        dir('BoardGame') {
-                            sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."                        
+                    try {
+                        withDockerRegistry(credentialsId: "docker-cred", toolName:'docker'){
+                            dir('BoardGame') {
+                                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."                        
+                            }
                         }
+                    } catch(Exception e) {
+                        error "Docker build failed: ${e.message}"
                     }
                 }
             }
@@ -111,16 +114,33 @@ pipeline {
         
         stage('Docker Image Scan') {
             steps {
-                sh "trivy image --format json -o trivy-image-report.json ${IMAGE_NAME}:${IMAGE_TAG}"
+                script {
+                    try {
+                        sh "trivy image --format json -o trivy-image-report.json --exit-code 0 --severity HIGH,CRITICAL ${IMAGE_NAME}:${IMAGE_TAG}"
+                    } catch(Exception e) {
+                        echo "Warning: Trivy scan found issues, but continuing pipeline: ${e.message}"
+                    }
+                }
             }
         }
         
-        
         stage('Push Docker Image'){
+            when {
+                environment name: 'PUSH_TO_DOCKER', value: 'true'
+            }
             steps{
                 script { 
-                    withDockerRegistry(credentialsId: "docker-cred", toolName:'docker'){
-                        sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                    try {
+                        withDockerRegistry(credentialsId: "docker-cred", toolName:'docker'){
+                            sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                        }
+                    } catch(Exception e) {
+                        error "Failed to push Docker image: ${e.message}"
+                        retry(2) {
+                            withDockerRegistry(credentialsId: "docker-cred", toolName:'docker'){
+                                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                            }
+                        }
                     }
                 }
             }
@@ -137,39 +157,21 @@ pipeline {
         }
 
         always {
-             sh 'docker logout'
-
-            // script{
-            //     def jobName = env.JOB_NAME
-            //     def buildNumber = env.BUILD_NUMBER
-            //     def pipelineStatus = currentBuild.result ?: "UNKNOWN"
-            //     def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+            script{
+                def jobName = env.JOB_NAME
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: "UNKNOWN"
                 
-            //     def body = """
-            //         <html>
-            //             <body>
-            //                 <div style="border: 4px solid ${bannerColor}; padding: 10px;">
-            //                     <h2> ${jobName} - Build ${buildNumber} </h2>
-            //                     <div style="background-color: ${bannerColor}; padding: 10px">
-            //                         <h3 style="color: white;"> Pipeline Status: ${pipelineStatus.toUpperCase()} </h3>
-            //                     </div>
-            //                     <p> Check the <a href="${BUILD_URL}"> console output. </a></p>
-            //                 </div>
-            //             </body>
-            //         </html>
-            //     """
+                echo "Pipeline '${jobName}' #${buildNumber} completed with status: ${pipelineStatus}"
                 
+                if (fileExists('trivy-fs-report.json')) {
+                    echo "Trivy filesystem scan report is available"
+                }
                 
-            //     emailext(
-            //         subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
-            //         body: body,
-            //         to: 'osamamostafa065@gmail.com,abdelrahman.hamouda29@gmail.com',
-            //         from: "jenkins-BoardGame-CD-pipline@gmail.com",
-            //         replyTo: "jenkins-BoardGame-CD-pipline@gmail.com",
-            //         mimeType: 'text/html',
-            //         attachmentsPattern: 'trivy-image-report.json,trivy-fs-report.json'
-            //     )
-            // }
+                if (fileExists('trivy-image-report.json')) {
+                    echo "Trivy Docker image scan report is available"
+                }
+            }
         }
     }
 }

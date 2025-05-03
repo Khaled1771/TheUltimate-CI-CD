@@ -1,117 +1,189 @@
-# Jenkins CI/CD Pipeline
+# Jenkins CI/CD Pipeline Configuration
 
-This directory contains the configuration and scripts for setting up and managing Jenkins pipelines for the Ultimate CI/CD project. Jenkins is used as the core CI/CD tool to automate the build, test, and deployment processes.
+This directory contains the configuration and scripts for setting up and managing Jenkins pipelines for the Ultimate CI/CD project. Jenkins is the core CI/CD tool that automates the build, test, and deployment processes.
 
 ## Overview
 
-The Jenkins pipelines are divided into two main categories:
+The Jenkins pipeline is divided into two main components:
 
-1. **CI Pipeline**: Focuses on building, testing, and packaging the application.
-2. **CD Pipeline**: Handles the deployment of the application to Kubernetes.
+1. **CI Pipeline**: Focuses on building, testing, and packaging the application
+2. **CD Pipeline**: Handles the deployment of the application to Kubernetes
 
-These pipelines are defined using Jenkinsfiles and leverage tools like Maven, Docker, SonarQube, and Ansible to ensure a robust and automated workflow.
+These pipelines leverage tools like Maven, Docker, and Kubernetes to ensure a robust and automated workflow.
 
 ## Prerequisites
 
-Before setting up Jenkins, ensure the following prerequisites are met:
+Before setting up the Jenkins pipeline, ensure you have:
 
 1. **Jenkins Server**:
-   - A Jenkins server is installed and running.
-   - Required plugins are installed (see `plugins.txt`).
+   - A running Jenkins instance (set up via Terraform and Ansible from previous steps)
+   - Initial admin password retrieved and Jenkins configured with an admin user
 
-2. **Credentials**:
-   - Git credentials for accessing the repository.
-   - Docker Hub credentials for pushing images.
-   - SonarQube credentials for quality analysis.
+2. **Required Plugins**:
+   - The plugins listed in `plugins.txt` should be installed
+   - You can install them via the Jenkins UI or using the Jenkins CLI
 
-3. **Tools**:
-   - Docker installed on the Jenkins server.
-   - Maven installed and configured.
-   - SonarQube server accessible.
+3. **Credentials Configuration**:
+   - Docker Hub credentials for pushing images
+   - Git credentials for accessing the repository
+   - Kubernetes credentials for deployment
 
-4. **Infrastructure**:
-   - The Terraform infrastructure is deployed, including the Kubernetes cluster and S3 buckets.
+## Jenkins Initial Setup
 
-## Pipeline Structure
+### Step 1: Access Jenkins
 
-### CI Pipeline
+Access your Jenkins instance at `http://<JENKINS_IP>:8080`
 
-The CI pipeline is defined in `ci pipeline/Jenkinsfile` and includes the following stages:
+```bash
+# Get the initial admin password (from your local machine)
+ssh ec2-user@<JENKINS_IP> "sudo cat /var/lib/jenkins/secrets/initialAdminPassword"
+```
 
-1. **Git Checkout**: Clones the repository from the specified branch.
-2. **Compile**: Compiles the application using Maven.
-3. **Test**: Runs unit tests to ensure code quality.
-4. **SonarQube Analysis**: Performs static code analysis using SonarQube.
-5. **Build**: Packages the application into a deployable artifact.
-6. **Publish to Nexus**: Uploads the artifact to Nexus Repository Manager.
-7. **Build & Tag Docker Image**: Builds a Docker image and tags it.
-8. **Push Docker Image**: Pushes the Docker image to Docker Hub.
+### Step 2: Install Required Plugins
 
-### CD Pipeline
+1. Navigate to "Manage Jenkins" > "Manage Plugins" > "Available"
+2. Search for and install the following plugins:
+   - Pipeline
+   - Git Integration
+   - Docker Pipeline
+   - Kubernetes CLI
+   - Maven Integration
+   - JUnit
+   - Credentials Binding
+   - Email Extension
+   - Timestamper
 
-The CD pipeline is defined in `cd pipeline/jenkinsfile` and includes the following stages:
+Alternatively, you can use the script in this directory to install plugins automatically:
 
-1. **Git Checkout**: Clones the repository from the specified branch.
-2. **Deploy to Kubernetes**: Deploys the application to the Kubernetes cluster using Ansible.
-3. **Verify Deployment**: Verifies that the application is running as expected.
+```bash
+# Upload the plugins.txt to Jenkins server
+scp plugins.txt ec2-user@<JENKINS_IP>:/tmp/
 
-## Setting Up Jenkins
-
-### Step 1: Install Required Plugins
-
-Install the following plugins on your Jenkins server:
-
-- Pipeline
-- Git
-- Docker Pipeline
-- SonarQube Scanner
-- Email Extension
-- Ansible
-
-### Step 2: Configure Credentials
-
-Add the following credentials in Jenkins:
-
-1. **Git Credentials**: For accessing the Git repository.
-2. **Docker Hub Credentials**: For pushing Docker images.
-3. **SonarQube Credentials**: For performing code analysis.
+# SSH to the server and run
+ssh ec2-user@<JENKINS_IP>
+sudo jenkins-plugin-cli --plugin-file /tmp/plugins.txt
+```
 
 ### Step 3: Configure Tools
 
-1. **JDK**: Add JDK 17 in Jenkins global tool configuration.
-2. **Maven**: Add Maven 3 in Jenkins global tool configuration.
-3. **SonarQube Scanner**: Add SonarQube Scanner in Jenkins global tool configuration.
+Navigate to "Manage Jenkins" > "Global Tool Configuration" and set up:
 
-### Step 4: Create Pipelines
+1. **JDK**:
+   - Name: `jdk17`
+   - Install automatically or provide path to installation
 
-1. Create a new pipeline job for the CI pipeline and point it to `ci pipeline/Jenkinsfile`.
-2. Create a new pipeline job for the CD pipeline and point it to `cd pipeline/jenkinsfile`.
+2. **Maven**:
+   - Name: `maven3`
+   - Install automatically or provide path to installation
 
-## Running the Pipelines
+3. **Docker**:
+   - Name: `docker`
+   - Installation path: `/usr/bin/docker` (should be installed by Ansible)
 
-1. Trigger the CI pipeline to build, test, and package the application.
-2. Once the CI pipeline completes successfully, trigger the CD pipeline to deploy the application.
+### Step 4: Configure Credentials
+
+Navigate to "Manage Jenkins" > "Manage Credentials" > "Global" > "Add Credentials" and add:
+
+1. **Docker Hub**:
+   - Kind: Username with password
+   - ID: `docker-cred`
+   - Username: Your Docker Hub username
+   - Password: Your Docker Hub password
+
+2. **Git Credentials** (if using private repository):
+   - Kind: Username with password
+   - ID: `git-cred`
+   - Username/Password: Your git credentials
+
+3. **Kubernetes**:
+   - Kind: Secret file
+   - ID: `kubeconfig`
+   - File: Upload your kubeconfig file
+
+## Pipeline Configuration
+
+### CI Pipeline Setup
+
+1. Create a new Pipeline job in Jenkins:
+   - Click "New Item"
+   - Enter a name (e.g., "BoardGame-CI")
+   - Select "Pipeline" and click "OK"
+
+2. Configure the pipeline:
+   - Under "Pipeline", select "Pipeline script from SCM"
+   - Select "Git" as SCM
+   - Enter your repository URL
+   - Specify the branch (e.g., `main`, `master`, or `dev`)
+   - Script path: `Jenkins/Jenkinsfile`
+   - Click "Save"
+
+### CD Pipeline Setup (Optional)
+
+1. Create another Pipeline job for deployment:
+   - Click "New Item"
+   - Enter a name (e.g., "BoardGame-CD")
+   - Select "Pipeline" and click "OK"
+
+2. Configure the CD pipeline:
+   - Same as CI, but use `Jenkins/cd-pipeline/Jenkinsfile` if available
+
+### Understanding the Jenkinsfile
+
+The `Jenkinsfile` in this directory defines a declarative pipeline with the following stages:
+
+1. **Git Checkout**: Retrieves source code from the repository
+2. **Compile**: Compiles the application using Maven
+3. **Test**: Runs unit tests to ensure code quality
+4. **File System Scan**: Scans the code for security vulnerabilities
+5. **Build**: Packages the application using Maven
+6. **Build & Tag Docker Image**: Creates a Docker image of the application
+7. **Docker Image Scan**: Scans the Docker image for vulnerabilities
+8. **Push Docker Image**: Pushes the image to Docker Hub
+
+## Running the Pipeline
+
+1. Navigate to your CI pipeline job
+2. Click "Build Now" to start the pipeline
+3. Monitor the progress in the "Stage View"
+4. Once complete, navigate to the CD pipeline if configured, and click "Build Now"
+
+## Customizing the Pipeline
+
+To customize the pipeline for your specific needs:
+
+1. **Modify the Jenkinsfile**:
+   - Add or remove stages as needed
+   - Adjust the build and test commands for your project
+   - Update Docker image names and tags
+   
+2. **Change Build Parameters**:
+   - Environment variables can be modified in the Jenkinsfile
+   - Add parameters in the job configuration for dynamic values
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Pipeline Fails at Git Checkout**:
-   - Ensure the Git credentials are correctly configured.
-   - Verify the repository URL and branch name.
+   - Check if the Git credentials are correctly configured
+   - Verify the repository URL and branch name
 
-2. **SonarQube Analysis Fails**:
-   - Ensure the SonarQube server is accessible.
-   - Verify the SonarQube credentials and project key.
+2. **Build or Test Failures**:
+   - Examine the console output for specific error messages
+   - Verify that the project structure matches what the Jenkinsfile expects
 
-3. **Docker Image Push Fails**:
-   - Ensure Docker Hub credentials are correctly configured.
-   - Verify the Docker Hub repository name and permissions.
+3. **Docker Issues**:
+   - Ensure Docker is installed and the Jenkins user has permissions
+   - Verify Docker Hub credentials are correctly configured
 
-4. **Deployment Fails**:
-   - Ensure the Kubernetes cluster is running and accessible.
-   - Verify the Ansible inventory and playbooks.
+4. **Security Scan Failures**:
+   - Review the scan reports to address identified vulnerabilities
+   - Adjust scan severity thresholds if needed for initial deployment
 
-## Support
+## Next Steps
 
-For questions or support, please contact the project maintainers or refer to the Jenkins documentation.
+Once your Jenkins pipeline is set up and running successfully:
+
+1. Customize the pipeline for your specific workflow needs
+2. Configure webhooks for automatic pipeline triggers on code changes
+3. Proceed to the [Kubernetes directory](../Kubernetes/) to set up the deployment manifests

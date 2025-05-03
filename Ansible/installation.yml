@@ -1,255 +1,204 @@
-#######     Installation play-book     #######  
-- name: Configure Jenkins server
-  hosts: jenkins
-  become: yes
+---
+- name: Install and Configure CI/CD Tools
+  hosts: all
+  become: true
   tasks:
-    - name: Install dependencies
-      yum:
-        name:
-          - java-17-amazon-corretto
-          - ca-certificates
-          - curl
-        state: present
+    - name: Update apt cache
+      apt:
         update_cache: yes
+      when: ansible_os_family == "Debian"
 
-    - name: Add Jenkins repo
-      get_url:
-        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
-        dest: /etc/yum.repos.d/jenkins.repo
-        mode: '0644'
-
-    - name: Import Jenkins GPG key
-      rpm_key:
-        key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    - name: Install common packages
+      package:
+        name:
+          - curl
+          - wget
+          - git
+          - unzip
+          - vim
+          - python3
+          - python3-pip
+          - jq
         state: present
-
-    - name: Import Jenkins GPG key - alternative method
-      shell: >
-        rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-
-    - name: Install Jenkins with GPG check disabled
-      yum:
-        name: jenkins
-        state: present
-        disable_gpg_check: yes
 
     - name: Install Docker
-      yum:
-        name:
-          - docker
-          - python3-pip
-        state: present
+      include_tasks: tasks/install_docker.yml
 
-    - name: Install Trivy
-      shell: |
-        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-      args:
-        creates: /usr/local/bin/trivy
+- name: Configure Jenkins Server
+  hosts: jenkins
+  become: true
+  tasks:
+    - name: Install Java
+      package:
+        name: openjdk-17-jdk
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Jenkins apt key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Jenkins apt repository
+      apt_repository:
+        repo: deb https://pkg.jenkins.io/debian-stable binary/
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Start and enable Jenkins service
+      service:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    - name: Add Jenkins user to docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+
+    - name: Install Maven
+      unarchive:
+        src: https://mirrors.ocf.berkeley.edu/apache/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
+        dest: /opt
+        remote_src: yes
+        creates: /opt/apache-maven-3.8.6
+
+    - name: Create symbolic link for Maven
+      file:
+        src: /opt/apache-maven-3.8.6
+        dest: /opt/maven
+        state: link
+
+    - name: Set up Maven environment variables
+      copy:
+        content: |
+          export M2_HOME=/opt/maven
+          export PATH=${M2_HOME}/bin:${PATH}
+        dest: /etc/profile.d/maven.sh
+        mode: '0644'
 
     - name: Install kubectl
       shell: |
-        curl -LO "https://dl.k8s.io/release/stable.txt"
-        KUBECTL_VERSION=$(cat stable.txt)
-        curl -LO "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl"
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x kubectl
         mv kubectl /usr/local/bin/
-        rm stable.txt
       args:
         creates: /usr/local/bin/kubectl
 
-    - name: Start and enable Docker
-      service:
-        name: docker
-        state: started
-        enabled: yes
+    - name: Install AWS CLI
+      unarchive:
+        src: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /tmp
+        remote_src: yes
+        creates: /tmp/aws
+      
+    - name: Install AWS CLI (continued)
+      shell: /tmp/aws/install
+      args:
+        creates: /usr/local/bin/aws
 
-    - name: Start and enable Jenkins
+    - name: Install Trivy for vulnerability scanning
+      shell: |
+        apt-get install wget apt-transport-https gnupg lsb-release -y
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | tee /usr/share/keyrings/trivy.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | tee -a /etc/apt/sources.list.d/trivy.list
+        apt-get update
+        apt-get install trivy -y
+      args:
+        creates: /usr/bin/trivy
+      when: ansible_os_family == "Debian"
+
+    - name: Restart Jenkins to apply changes
       service:
         name: jenkins
-        state: started
-        enabled: yes
+        state: restarted
 
-- name: Configure Nexus repository server
+- name: Configure Nexus Server
   hosts: nexus
-  become: yes
+  become: true
   tasks:
-    - name: Install Docker
-      yum:
-        name: docker
+    - name: Install Java
+      package:
+        name: openjdk-17-jdk
         state: present
-        update_cache: yes
+      when: ansible_os_family == "Debian"
 
-    - name: Install Python dependencies for Docker module
-      yum:
-        name:
-          - python3-pip
-        state: present
-
-    - name: Install Python Docker library
-      pip:
-        name:
-          - urllib3==1.26.16
-          - docker
-          - requests<=2.29.0
-
-    - name: Start and enable Docker
-      service:
-        name: docker
-        state: started
-        enabled: yes
-
-    - name: Run Nexus container
-      docker_container:
+    - name: Create Nexus user
+      user:
         name: nexus
-        image: sonatype/nexus3:latest
-        state: started
-        restart_policy: always
-        ports:
-          - "8081:8081"
+        shell: /bin/bash
+        home: /opt/nexus
+        create_home: yes
+        system: yes
 
-- name: Configure Monitoring server (Prometheus and Grafana)
-  hosts: monitoring
-  become: yes
-  tasks:
-    - name: Install Docker and dependencies
-      yum:
-        name:
-          - docker
-          - python3-pip
-          - ca-certificates
-          - curl
-        state: present
-        update_cache: yes
+    - name: Download Nexus OSS
+      get_url:
+        url: https://download.sonatype.com/nexus/3/nexus-3.63.0-01-unix.tar.gz
+        dest: /tmp/nexus.tar.gz
+        mode: '0644'
 
-    - name: Install Python dependencies for Docker module
-      pip:
-        name:
-          - urllib3==1.26.16
-          - docker
-          - requests<=2.29.0
-
-    - name: Start and enable Docker
-      service:
-        name: docker
-        state: started
-        enabled: yes
-
-    - name: Install Docker Compose
-      shell: |
-        curl -L "https://github.com/docker/compose/releases/download/v2.23.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
-      args:
-        creates: /usr/local/bin/docker-compose
-
-    - name: Create directories for monitoring stack
+    - name: Create Nexus installation directory
       file:
-        path: "{{ item }}"
+        path: /opt/nexus
         state: directory
-        mode: '0755'
-      loop:
-        - /opt/monitoring
-        - /opt/monitoring/prometheus
+        owner: nexus
+        group: nexus
 
-    - name: Create prometheus.yml configuration
-      copy:
-        dest: /opt/monitoring/prometheus/prometheus.yml
-        content: |
-          global:
-            scrape_interval: 15s
+    - name: Extract Nexus OSS
+      unarchive:
+        src: /tmp/nexus.tar.gz
+        dest: /opt/nexus
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+        owner: nexus
+        group: nexus
+        creates: /opt/nexus/bin/nexus
 
-          scrape_configs:
-            - job_name: 'prometheus'
-              static_configs:
-                - targets: ['localhost:9090']
-
-            - job_name: 'node_exporter'
-              static_configs:
-                - targets: ['localhost:9100']
-
-            - job_name: 'jenkins'
-              metrics_path: /prometheus
-              static_configs:
-                - targets: ["{{ hostvars[groups['jenkins'][0]].ansible_host }}:8080"]
-
-            - job_name: 'kubernetes'
-              kubernetes_sd_configs:
-                - role: node
-                api_server: "https://9ADF9621C6F7D1723C2708CD580F7E75.gr7.us-east-1.eks.amazonaws.com"
-                bearer_token: "<bearer-token>"
-                tls_config:
-                  ca_file: /path/to/ca.crt
-            relabel_configs:
-              - source_labels: [__meta_kubernetes_node_label_kubernetes_io_hostname]
-                target_label: instance
-              - source_labels: [__meta_kubernetes_node_name]
-                target_label: node
-
-        mode: '0644'
-
-    - name: Create docker-compose.yml
-      copy:
-        dest: /opt/monitoring/docker-compose.yml
-        content: |
-          version: '3'
-
-          services:
-            prometheus:
-              image: prom/prometheus:latest
-              volumes:
-                - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-                - prometheus_data:/prometheus
-              command:
-                - '--config.file=/etc/prometheus/prometheus.yml'
-              ports:
-                - 9090:9090
-              restart: always
-
-            node-exporter:
-              image: prom/node-exporter:latest
-              ports:
-                - 9100:9100
-              restart: always
-
-            grafana:
-              image: grafana/grafana:latest
-              volumes:
-                - grafana_data:/var/lib/grafana
-              ports:
-                - 3000:3000
-              restart: always
-              environment:
-                - GF_SECURITY_ADMIN_PASSWORD=admin
-                - GF_USERS_ALLOW_SIGN_UP=false
-
-            alertmanager:
-              image: prom/alertmanager:latest
-              ports:
-                - 9093:9093
-              restart: always
-              volumes:
-                - alertmanager_data:/alertmanager
-
-            blackbox-exporter:
-              image: prom/blackbox-exporter:latest
-              ports:
-                - 9115:9115
-              restart: always    
-
-          volumes:
-            prometheus_data:
-            grafana_data:
-            alertmanager_data:
-        mode: '0644'
-
-    - name: Start the monitoring stack
-      shell: |
-        cd /opt/monitoring
-        /usr/local/bin/docker-compose up -d
-      args:
-        creates: /opt/monitoring/setup_complete
-
-    - name: Mark setup as complete
+    - name: Create Nexus data directory
       file:
-        path: /opt/monitoring/setup_complete
-        state: touch
+        path: /opt/nexus-data
+        state: directory
+        owner: nexus
+        group: nexus
+
+    - name: Set NEXUS_HOME environment
+      lineinfile:
+        path: /opt/nexus/bin/nexus.rc
+        regexp: '^#?run_as_user="nexus"'
+        line: 'run_as_user="nexus"'
+
+    - name: Create Nexus service file
+      copy:
+        content: |
+          [Unit]
+          Description=Nexus Repository Manager
+          After=network.target
+
+          [Service]
+          Type=forking
+          ExecStart=/opt/nexus/bin/nexus start
+          ExecStop=/opt/nexus/bin/nexus stop
+          User=nexus
+          Group=nexus
+          Restart=on-abort
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/nexus.service
         mode: '0644'
+
+    - name: Start and enable Nexus service
+      systemd:
+        name: nexus
+        daemon_reload: yes
+        enabled: yes
+        state: started
