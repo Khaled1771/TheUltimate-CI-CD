@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: jenkins
+  namespace: kps
+  labels:
+    release: kube-prometheus-stack
+spec:
+  staticConfigs:
+    - labels:
+        job: jenkins
+      targets:
+        - 3.89.61.96:8080
+  metricsPath: /prometheus/

@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: blackbox
+  labels:
+    release: kube-prometheus-stack  # IMPORTANT: match your kube-prometheus-stack release name
+spec:
+  jobLabel: blackbox
+  endpoints:
+    - port: http
+      path: /probe
+      interval: 30s
+      params:
+        module: [http_2xx]
+      relabelings:
+        - sourceLabels: [__address__]
+          targetLabel: __param_target
+        - sourceLabels: [__param_target]
+          targetLabel: instance
+        - targetLabel: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.default.svc.cluster.local:9115
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-blackbox-exporter

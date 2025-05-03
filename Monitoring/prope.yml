@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: website-probe
+  labels:
+    release: prometheus
+spec:
+  interval: 30s
+  module: http_2xx
+  targets:
+    staticConfig:
+      static:
+        - http://board-game-service.default.svc.cluster.local
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.default.svc.cluster.local:9115
