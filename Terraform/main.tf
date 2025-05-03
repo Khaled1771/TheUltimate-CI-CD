@@ -104,3 +104,88 @@ module "eks" {
     aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly
   ]
 }
+
+
+resource "aws_security_group" "monitoring" {
+   name        = "${var.project_name}-monitoring-sg"
+   description = "Security group for Prometheus/Grafana monitoring server"
+   vpc_id      = module.vpc.vpc_id
+ 
+   # Allow HTTP access to Grafana UI
+   ingress {
+     description = "HTTP for Grafana UI"
+     from_port   = 3000
+     to_port     = 3000
+     protocol    = "tcp"
+     cidr_blocks = [var.admin_cidr]
+   }
+ 
+   # Allow HTTP access to Prometheus UI
+   ingress {
+     description = "HTTP for Prometheus UI"
+     from_port   = 9090
+     to_port     = 9090
+     protocol    = "tcp"
+     cidr_blocks = [var.admin_cidr]
+   }
+ 
+   # Allow Alert Manager UI
+   ingress {
+     description = "HTTP for Alert Manager UI"
+     from_port   = 9093
+     to_port     = 9093
+     protocol    = "tcp"
+     cidr_blocks = [var.admin_cidr]
+   }
+ 
+   # Allow SSH access
+   ingress {
+     description = "SSH access"
+     from_port   = 22
+     to_port     = 22
+     protocol    = "tcp"
+     cidr_blocks = [var.admin_cidr]
+   }
+ 
+   # Allow all outbound traffic
+   egress {
+     from_port   = 0
+     to_port     = 0
+     protocol    = "-1"
+     cidr_blocks = ["0.0.0.0/0"]
+   }
+ 
+   tags = {
+     Name        = "${var.project_name}-monitoring-sg"
+     Environment = var.environment
+     Project     = var.project_name
+   }
+ }
+ 
+ # Monitoring EC2 Instance
+ resource "aws_instance" "monitoring" {
+   ami                    = var.ami_id != null ? var.ami_id : data.aws_ami.amazon_linux_2.id
+   instance_type          = var.monitoring_instance_type
+   key_name               = var.key_name
+   vpc_security_group_ids = [aws_security_group.monitoring.id]
+   subnet_id              = var.monitoring_subnet_type == "public" ? module.vpc.public_subnet_ids[0] : module.vpc.private_subnet_ids[0]
+   iam_instance_profile   = aws_iam_instance_profile.monitoring.name
+ 
+   root_block_device {
+     volume_size           = var.monitoring_volume_size
+     volume_type           = "gp3"
+     encrypted             = true
+     delete_on_termination = true
+   }
+   tags = {
+     Name        = "${var.project_name}-monitoring-server"
+     Environment = var.environment
+     Project     = var.project_name
+     Service     = "Prometheus-Grafana"
+   }
+ 
+   depends_on = [
+     module.vpc,
+     module.cicd_infrastructure
+   ]
+ }

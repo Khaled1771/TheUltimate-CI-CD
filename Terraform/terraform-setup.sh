@@ -80,7 +80,6 @@ if aws ec2 describe-key-pairs --key-names ${KEY_NAME} 2>/dev/null; then
       --key-name ${KEY_NAME} \
       --query 'KeyMaterial' \
       --output text > ${KEY_FILE}
-      --region ${REGION_NAME}
 
     # Set proper permissions for the key file
     chmod 400 ${KEY_FILE}
@@ -92,7 +91,6 @@ else
     --key-name ${KEY_NAME} \
     --query 'KeyMaterial' \
     --output text > ${KEY_FILE}
-    --region ${REGION_NAME}
   
   # Set proper permissions for the key file
   chmod 400 ${KEY_FILE}

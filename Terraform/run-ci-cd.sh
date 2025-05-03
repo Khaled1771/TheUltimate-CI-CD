@@ -7,13 +7,14 @@ set -euo pipefail
 
 
 # 1. Terraform init & apply
-terraform init 
+# terraform init 
 terraform apply -auto-approve
 
 # 2. Capture IPs as JSON
 JENKINS_IP=$(terraform output -json jenkins_public_ip | jq -r .)
 NEXUS_IP=$(terraform output -json nexus_public_ip | jq -r .)
 SONARQUBE_IP=$(terraform output -json sonarqube_public_ip | jq -r .)
+MONITORING_IP=$(terraform output -json monitoring_public_ip | jq -r .)
 
 # 3. Generate dynamic Ansible inventory
 cat > ../Ansible/inventory <<EOF
@@ -25,6 +26,9 @@ sonarqube-server ansible_host=${SONARQUBE_IP} ansible_user=ec2-user
 
 [nexus]
 nexus-server ansible_host=${NEXUS_IP} ansible_user=ec2-user
+
+[monitoring]
+ monitoring-server ansible_host=${MONITORING_IP} ansible_user=ec2-user
 
 [all:vars]
 ansible_ssh_private_key_file=../terraform/board-game-key.pem

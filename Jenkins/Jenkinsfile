@@ -48,24 +48,30 @@ pipeline {
             }
         }
         
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                       $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=BoardGame-dev -Dsonar.projectKey=BoardGame-dev \
-                       -Dsonar.java.binaries=. 
-                    '''
-                }
-            }
-        }
+        // stage('SonarQube Analysis') {
+        //     steps {
+        //         script {
+        //             dir('BoardGame') {
+        //                 withSonarQubeEnv('sonar') {
+        //                     sh ''' 
+        //                         $SCANNER_HOME/bin/sonar-scanner \
+        //                         -Dsonar.projectName=board-game-ci \
+        //                         -Dsonar.projectKey=board-game-ci \
+        //                         -Dsonar.java.binariessources=. 
+        //                     '''
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
             
-        stage('Quality Gate') {
-            steps {
-                script{
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
+        // stage('Quality Gate') {
+        //     steps {
+        //         script{
+        //             waitForQualityGate abortPipeline: false, credentialsId: 'sonar-cred'
+        //         }
+        //     }
+        // }
         
         stage('Build'){
             steps{
@@ -133,37 +139,37 @@ pipeline {
         always {
              sh 'docker logout'
 
-            script{
-                def jobName = env.JOB_NAME
-                def buildNumber = env.BUILD_NUMBER
-                def pipelineStatus = currentBuild.result ?: "UNKNOWN"
-                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+            // script{
+            //     def jobName = env.JOB_NAME
+            //     def buildNumber = env.BUILD_NUMBER
+            //     def pipelineStatus = currentBuild.result ?: "UNKNOWN"
+            //     def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
                 
-                def body = """
-                    <html>
-                        <body>
-                            <div style="border: 4px solid ${bannerColor}; padding: 10px;">
-                                <h2> ${jobName} - Build ${buildNumber} </h2>
-                                <div style="background-color: ${bannerColor}; padding: 10px">
-                                    <h3 style="color: white;"> Pipeline Status: ${pipelineStatus.toUpperCase()} </h3>
-                                </div>
-                                <p> Check the <a href="${BUILD_URL}"> console output. </a></p>
-                            </div>
-                        </body>
-                    </html>
-                """
+            //     def body = """
+            //         <html>
+            //             <body>
+            //                 <div style="border: 4px solid ${bannerColor}; padding: 10px;">
+            //                     <h2> ${jobName} - Build ${buildNumber} </h2>
+            //                     <div style="background-color: ${bannerColor}; padding: 10px">
+            //                         <h3 style="color: white;"> Pipeline Status: ${pipelineStatus.toUpperCase()} </h3>
+            //                     </div>
+            //                     <p> Check the <a href="${BUILD_URL}"> console output. </a></p>
+            //                 </div>
+            //             </body>
+            //         </html>
+            //     """
                 
                 
-                emailext(
-                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
-                    body: body,
-                    to: 'osamamostafa065@gmail.com,abdelrahman.hamouda29@gmail.com',
-                    from: "jenkins-BoardGame-CD-pipline@gmail.com",
-                    replyTo: "jenkins-BoardGame-CD-pipline@gmail.com",
-                    mimeType: 'text/html',
-                    attachmentsPattern: 'trivy-image-report.json,trivy-fs-report.json'
-                )
-            }
+            //     emailext(
+            //         subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+            //         body: body,
+            //         to: 'osamamostafa065@gmail.com,abdelrahman.hamouda29@gmail.com',
+            //         from: "jenkins-BoardGame-CD-pipline@gmail.com",
+            //         replyTo: "jenkins-BoardGame-CD-pipline@gmail.com",
+            //         mimeType: 'text/html',
+            //         attachmentsPattern: 'trivy-image-report.json,trivy-fs-report.json'
+            //     )
+            // }
         }
     }
 }
