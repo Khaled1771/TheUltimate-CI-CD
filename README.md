@@ -48,7 +48,7 @@ This repository contains the comprehensive blueprint and implementation plan for
    - Deploy load balancers with TLS termination for secure access
    - Create encrypted S3 buckets for artifact storage with lifecycle policies
    - Configure IAM roles with fine-grained permissions
-
+ 
 4. **Infrastructure Security**
    - Implement AWS security guardrails and compliance controls
    - Configure multi-layered IAM policies following least privilege principle
