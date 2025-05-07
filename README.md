@@ -77,9 +77,6 @@ This project implements the following CI/CD lifecycle:
 7. **Continuous Delivery**: ArgoCD detects new Docker image and updates the deployment
 8. **Monitoring**: Application and infrastructure are monitored with Prometheus and Grafana
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Next Steps
 
