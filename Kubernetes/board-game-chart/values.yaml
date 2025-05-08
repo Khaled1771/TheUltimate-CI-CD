@@ -7,5 +7,6 @@ image:
   pullPolicy: Always
 
 service:
-  type: ClusterIP
+  type: NodePort
   port: 8080
+  nodePort: 32000
