@@ -1,9 +1,6 @@
 -jdk
 eclipse temurin installer plugin
 
--sonar
-sonarQube scanner 
-
 -maven
 config file provider
 maven integration
