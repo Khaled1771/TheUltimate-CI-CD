@@ -1,15 +1,8 @@
 [jenkins]
 jenkins-server ansible_host=3.89.61.96 ansible_user=ec2-user
 
-; [sonarqube]
-; sonarqube-server ansible_host=18.234.49.92 ansible_user=ec2-user
-
 [nexus]
 nexus-server ansible_host=13.217.111.178 ansible_user=ec2-user
-
-[monitoring]
- monitoring-server ansible_host=54.80.33.22 ansible_user=ec2-user
  
-
 [all:vars]
 ansible_ssh_private_key_file=../Terraform/board-game-key.pem
